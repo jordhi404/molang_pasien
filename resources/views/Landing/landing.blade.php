@@ -6,6 +6,6 @@
     <title>Patient Discharge Landing Page</title>
 </head>
 <body>
-    
+    Hello, World!
 </body>
 </html>
