@@ -7,21 +7,30 @@ $(document).ready(function() {
         $.ajax({
             url: '/ajax/patients',
             method: 'GET',
-            timeout: 10000, // Timeout setelah load 10 detik.
+            timeout: 20000, // Timeout setelah load 20 detik.
             success: function(data) {
                 retryCount = 0; // Reset counter jika data berhasil termuat.
                 let rows = '';
+
+                // Urutkan data berdasarkan ServiceUnitName dan PatientName (tambahan jika di sisi JS)
+                data.sort((a, b) => {
+                    if (a.ServiceUnitName < b.ServiceUnitName) return -1;
+                    if (a.ServiceUnitName > b.ServiceUnitName) return 1;
+                    if (a.PatientName < b.PatientName) return -1;
+                    if (a.PatientName > b.PatientName) return 1;
+                    return 0;
+                });
+
+
                 data.forEach(function(patient) {
                     rows += `<tr>
-                                <td>${patient.RegistrationNo}</td>
-                                <td>${patient.ServiceUnitName}</td>
-                                <td>${patient.BedCode}</td>
-                                <td>${patient.MedicalNo}</td>
-                                <td>${patient.PatientName}</td>
+                                <td><strong>${patient.PatientName}</strong><br> ${patient.MedicalNo} / ${patient.BedCode}</td>
                                 <td>${patient.CustomerType}</td>
-                                <td>${patient.ChargeClassName}</td>
-                                <td>${patient.RencanaPulang}</td>
                                 <td>${patient.CatRencanaPulang}</td>
+                                <td>${patient.TungguJangdik}</td>
+                                <td>${patient.Keperawatan}</td>
+                                <td>${patient.TungguFarmasi}</td>
+                                <td>${patient.SelesaiBilling}</td>
                                 <td>${patient.Keterangan}</td>
                             </tr>`;
                 });
@@ -43,12 +52,12 @@ $(document).ready(function() {
                 // Percobaan koneksi ulang.
                 if (retryCount < 3) {
                     retryCount++;
-                    $('#patients-table tbody').html('<tr><td colspan="10">Menghubungkan ulang($retryCount/3)...</td></tr>');
+                    $('#update-info').text('Koneksi timeout');
+                    $('#patients-table tbody').html(`<tr><td colspan="10"">Menghubungkan ulang... (${retryCount} dari 3)</td></tr>`);
                     setTimeout(updatePatientTable, 2000);
                 } else {
                     // Jika sudah gagal 3 kali percobaan.
                     $('#patients-table tbody').html('<tr><td colspan="10" style="color: red;">Gagal memuat data. Silakan refresh halaman secara manual.</td></tr>');
-                    alert('Gagal memuat data setelah 3 kali percobaan. Silahkan refresh secara manual.');
                 }
             }
         });
