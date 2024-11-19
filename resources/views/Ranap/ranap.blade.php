@@ -8,26 +8,27 @@
     <link rel="stylesheet" href="extra/style.css">
 </head>
 <body>
-    <div class="container">
+    <div class="container-fluid">
         <nav class="navbar navbar-expand-lg bg-body-tertiary">
             <div class="container-fluid">
-                <h2>Dashboard Rawat Inap</h2>
+                <div class="navbar-title d-flex flex-column">
+                    <h2 style="margin-bottom: 5px;">Dashboard Rawat Inap</h2>
+                    <p style="margin: 0; font-size: 20px;">{{date ('d F Y')}}</p>
+                </div>
                 <p id="update-info" style="font-size: 14px; color: gray;">Memuat data terbaru...</p>
             </div>
         </nav>
         <table class="table table-bordered" id="patients-table">
             <thead>
                 <tr>
-                    <th>Registration No</th>
-                    <th>Service Unit Name</th>
-                    <th>Bed Code</th>
-                    <th>Medical No</th>
-                    <th>Patient Name</th>
-                    <th>Customer Type</th>
-                    <th>Charge Class Name</th>
-                    <th>Rencana Pulang</th>
-                    <th>Catatan Rencana Pulang</th>
-                    <th>Keterangan</th>
+                    <th>PATIENT NAME</th>
+                    <th>PENJAMIN BAYAR</th>
+                    <th>NOTE PASIEN</th>
+                    <th>ORDER JANGDIK</th>
+                    <th>KEPERAWATAN</th>
+                    <th>ORDER FARMASI</th>
+                    <th>SELESAI PEMBAYARAN</th>
+                    <th>KETERANGAN</th>
                 </tr>
             </thead>
             <tbody>

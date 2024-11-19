@@ -13,7 +13,7 @@ Route::get('/', function () {
 Route::get('/patients', [RanapController::class, 'showPatientTable'])->name('patients.table');
 
 // Route untuk api data.
-Route::get('/ajax/patients', [RanapController::class, 'getPatientDataForAjax'])->name('ajax.patients');
+Route::get('/ajax/patients', [RanapController::class, 'getPatientData'])->name('ajax.patients');
 
 // Route untuk pengujian koneksi ke SQL Server.
 /*
