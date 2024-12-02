@@ -2,123 +2,116 @@
 
 namespace App\Http\Controllers;
 
-use Illuminate\Support\Facades\Cache;
+use Carbon\Carbon;
+use Illuminate\Support\Str;
 use Illuminate\Http\Request;
-use Illuminate\Support\Facades\DB;
+use App\Models\ip_mappings;
+use Illuminate\Support\Facades\Log;
+use App\Models\Patient;
 
 class RanapController extends Controller
 {
-    public function getPatientData() {
-        $cacheDuration = 160; // TTL cache = 2 menit 40 detik
-        $cacheKey = 'patient_ranap'; // cacheKey = patient_ranap
-        
-        $patients = Cache::remember($cacheKey, $cacheDuration, function() {
-            return DB::connection('sqlsrv')
-                    -> select("
-                            WITH Dashboard_CTE AS (
-                                SELECT DISTINCT 
-                                    a.RegistrationNo,
-                                    r.ServiceUnitName,
-                                    a.BedCode,
-                                    a.MedicalNo,
-                                    a.PatientName,
-                                    r.CustomerType,
-                                    r.ChargeClassName,
-                                    RencanaPulang = 
-                                        CASE 
-                                            WHEN cv.PlanDischargeTime IS NULL
-                                                THEN CAST(cv.PlanDischargeDate AS VARCHAR) + ' ' + CAST(cv.PlanDischargeTime AS VARCHAR)
-                                            ELSE CAST(cv.PlanDischargeDate AS VARCHAR) + ' ' + CAST(cv.PlanDischargeTime AS VARCHAR)
-                                        END,
-                                    CatRencanaPulang = cv.PlanDischargeNotes,
-                                    TungguJangdik = 
-                                        (SELECT TOP 1 TransactionNo 
-                                        FROM PatientChargesHD
-                                        WHERE VisitID=cv.VisitID 
-                                        AND GCTransactionStatus NOT IN ('X121^004','X121^005','X121^999')
-                                        AND HealthcareServiceUnitID IN (82,83,99,138,140)
-                                        ORDER BY TestOrderID ASC),
-                                    Keperawatan =
-                                        (SELECT TOP 1 TransactionNo 
-                                        FROM PatientChargesHD
-                                        WHERE VisitID=cv.VisitID 
-                                        AND GCTransactionStatus NOT IN ('X121^004','X121^005','X121^999')
-                                        AND HealthcareServiceUnitID NOT IN (82,83,99,138,140,101,137)
-                                        ORDER BY TestOrderID ASC),
-                                    TungguFarmasi = 
-                                        (SELECT TOP 1 TransactionNo 
-                                        FROM PatientChargesHD
-                                        WHERE VisitID=cv.VisitID 
-                                        AND GCTransactionStatus NOT IN ('X121^004','X121^005','X121^999')
-                                        AND HealthcareServiceUnitID IN (101,137)
-                                        ORDER BY TestOrderID ASC),
-                                    RegistrationStatus = 
-                                        (SELECT TOP 1 IsLockDownNEW
-                                        FROM RegistrationStatusLog 
-                                        WHERE RegistrationID = a.RegistrationID 
-                                        ORDER BY ID DESC),
-                                    OutStanding =
-                                        (SELECT DISTINCT COUNT(GCTransactionStatus) 
-                                        FROM PatientChargesHD 
-                                        WHERE VisitID=cv.VisitID 
-                                        AND GCTransactionStatus IN ('X121^001','X121^002','X121^003')),
-                                    SelesaiBilling = 
-                                        (SELECT TOP 1 PrintedDate 
-                                        FROM ReportPrintLog 
-                                        WHERE ReportID=7012 
-                                        AND ReportParameter = CONCAT('RegistrationID = ',r.RegistrationID) 
-                                        ORDER BY PrintedDate DESC),
-                                    Keterangan =
-                                    CASE 
-                                        WHEN sc.StandardCodeName = '' OR sc.StandardCodeName IS NULL
-                                            THEN ''
-                                        ELSE sc.StandardCodeName
-                                    END
-                                    FROM vBed a
-                                    LEFT JOIN vPatient p ON p.MRN = a.MRN
-                                    LEFT JOIN PatientNotes pn ON pn.MRN = a.MRN
-                                    LEFT JOIN vRegistration r ON r.RegistrationID = a.RegistrationID
-                                    LEFT JOIN ConsultVisit cv ON cv.VisitID = r.VisitID
-                                    LEFT JOIN StandardCode sc ON sc.StandardCodeID = cv.GCPlanDischargeNotesType
-                                    LEFT JOIN PatientVisitNote pvn ON pvn.VisitID = cv.VisitID 
-                                        AND pvn.GCNoteType IN ('X312^001', 'X312^002', 'X312^003', 'X312^004', 'X312^005', 'X312^006')
-                                    WHERE a.IsDeleted = 0 
-                                    AND a.RegistrationID IS NOT NULL
-                                    AND cv.PlanDischargeDate IS NOT NULL
-                                    AND r.GCRegistrationStatus <> 'X020^006' -- Pendaftaran Tidak DiBatalkan
-                            )
-                            SELECT 
-                                RegistrationNo,
-                                ServiceUnitName,
-                                BedCode,
-                                MedicalNo,
-                                PatientName,
-                                CustomerType,
-                                ChargeClassName,
-                                RencanaPulang,
-                                CatRencanaPulang,
-                                TungguJangdik,
-                                Keperawatan,
-                                TungguFarmasi,
-                                SelesaiBilling,
-                                CASE
-                                    WHEN Keperawatan IS NOT NULL AND TungguJangdik IS NULL AND TungguFarmasi IS NOT NULL THEN 'Tunggu Keperawatan'
-                                    WHEN TungguJangdik IS NOT NULL AND Keperawatan IS NOT NULL AND TungguFarmasi IS NOT NULL THEN 'Tunggu Jangdik'
-                                    WHEN TungguFarmasi IS NOT NULL AND Keperawatan IS NULL AND TungguJangdik IS NULL THEN 'Tunggu Farmasi'
-                                    WHEN RegistrationStatus = 0 AND OutStanding > 0 AND SelesaiBilling IS NULL THEN 'Tunggu Kasir'
-                                    WHEN RegistrationStatus = 1 AND OutStanding = 0 AND SelesaiBilling IS NULL THEN 'Tunggu Kasir'
-                                    WHEN RegistrationStatus = 1 AND OutStanding = 0 AND SelesaiBilling IS NOT NULL THEN 'Selesai Kasir'
-                                END AS Keterangan
-                            FROM Dashboard_CTE
-                        ");
-        });
+    public function getPatientDataAjax(Request $request) {
+        $patients = collect(Patient::getPatientData());
 
-        return response()->json($patients);
+        $ipAddress = $request->ip();
+
+        $unit = ip_mappings::on('pgsql')->where('ip_address', $ipAddress)->value('unit');
+
+        $serviceUnit = $this->getServiceUnit($unit);
+
+        /* MENGAMBIL DATA PASIEN UNTUK DITAMPILKAN. */
+        if ($unit !== 'TEKNOLOGI INFORMASI') {
+            // Jika $unit bukan 'TEKNOLOGI INFORMASI'
+            $patients = $patients->filter(function ($patient) use ($serviceUnit) {
+                return $patient->ServiceUnitName == $serviceUnit;
+            });
+        }
+
+        Log::info('IP client: ' . $ipAddress);
+        Log::info('unit IP address: ' . $unit);
+        Log::info('Service Unit: ' . $serviceUnit);
+
+        /* WARNA HEADER KARTU BERDASARKAN customerType (PENJAMIN BAYAR). */
+        $customerTypeColors = [
+            'Rekanan' => 'orange',
+            'Perusahaan' => 'pink',
+            'Yayasan' => 'lime',
+            'Karyawan - FASKES' => 'green',
+            'Karyawan - PTGJ' => 'lightgreen',
+            'Pemerintah' => 'red',
+            'Rumah Sakit' => 'aqua',
+            'BPJS - Kemenkes' => 'yellow',
+            'Pribadi' => 'lightblue',
+        ];
+
+        foreach ($patients as $patient) {
+            // Patient's short note.
+            $patient->short_note = $patient->CatRencanaPulang ? Str::limit($patient->CatRencanaPulang, 10) : null;
+
+            // Mengambil waktu rencana pulang
+            $dischargeTime = Carbon::parse($patient->RencanaPulang);
+
+            // Mengambil waktu saat ini.
+            $currentTime = Carbon::now();
+
+            // Menghitung waktu tunggu
+            if ($dischargeTime->gt($currentTime)) {
+                // Jika waktu rencana pulang di masa depan
+                $waitTime = '00:00:00'; // Waktu tunggu belum dimulai
+                $waitTimeInSeconds = 0; // Inisialisasi waitTimeInSeconds sebagai 0.
+            } else {
+                // Menghitung selisih waktu
+                $waitTimeInSeconds = $dischargeTime->diffInSeconds($currentTime);
+
+                // Format waktu tunggu dalam format hh:mm:ss
+                $waitTime = gmdate('H:i:s', $waitTimeInSeconds);
+            }    
+            $patient->wait_time = $waitTime;
+
+            // Menentukan stndard waktu berdasarkan status.
+            $status = $patient->Keterangan; // Ambil status pasien dari variabel Keterangan.
+            $standardWaitTimeInSeconds = $status === 'Tunggu Farmasi' ? 3600 : 1800; // Default time 1800 detik (30 menit). Jika Tunggu Farmasi standard nya 1 jam.
+            
+            // Persentase progress dan progress bar.
+            $progressPercentage = min(($waitTimeInSeconds / $standardWaitTimeInSeconds) * 100, 100);
+            $patient->progress_percentage = $progressPercentage;
+        }
+
+        return response()->json([
+            'patients' => $patients->values()->toArray(),
+            'customerTypeColors' => $customerTypeColors,
+        ]);
     }
 
-    public function showPatientTable() {
-        return view('Ranap.ranap'); // Pastikan file Blade sesuai
-    }
-    
+    /* FUNCTION UNTUK MENAMPILKAN DATA DI DASHBOARD RANAP. */
+    public function showDashboardRanap(Request $request) {
+        // Ambil data pasien dari getPatientDataAjax.
+        $response = $this->getPatientDataAjax($request);
+        $patients = $response->getData()->patients;
 
+        /* MENGIRIM DATA KE VIEW. */
+        return view('Ranap.ranap', compact('patients'));
+    }
+
+    // Fungsi untuk mendapatkan ServiceUnitName berdasarkan kode_bagian
+    protected function getServiceUnit($unit)
+    {
+        // Mapping kode_bagian ke ServiceUnitName
+        $serviceUnits = [
+            'TJAN KHEE SWAN TIMUR' => 'TJAN KHEE SWAN TIMUR',
+            'TJAN KHEE SWAN BARAT' => 'TJAN KHEE SWAN BARAT',
+            'UPI DEWASA' => 'UPI DEWASA',
+            'UPI ANAK' => 'UPI ANAK',
+            'KWEE HAN TIONG' => 'KWEE HAN TIONG',
+            'RUANG ASA' => 'RUANG ASA',
+            'PERAWATAN ANAK' => 'PERAWATAN ANAK',
+            'PERAWATAN IBU' => 'PERAWATAN IBU',
+            'KBY FISIO GD.IBU' => 'KBY FISIO GD.IBU',
+            'KEBIDANAN' => 'KEBIDANAN',
+            'TEKNOLOGI INFORMASI' => 'TEKNOLOGI INFORMASI',
+        ];
+
+        return $serviceUnits[$unit] ?? null;
+    }
 }
