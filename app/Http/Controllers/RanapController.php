@@ -8,23 +8,28 @@ use Illuminate\Http\Request;
 use App\Models\ip_mappings;
 use Illuminate\Support\Facades\Log;
 use App\Models\Patient;
+use App\Models\Bed;
+use App\Models\bed_cleaning_record;
+use App\Models\patient_transition;
+use Illuminate\Support\Facades\DB;
 
 class RanapController extends Controller
 {
     public function getPatientDataAjax(Request $request) {
         $patients = collect(Patient::getPatientData());
-
+        $beds = collect(Bed::getBedToClean());
         $ipAddress = $request->ip();
-
         $unit = ip_mappings::on('pgsql')->where('ip_address', $ipAddress)->value('unit');
-
         $serviceUnit = $this->getServiceUnit($unit);
 
         /* MENGAMBIL DATA PASIEN UNTUK DITAMPILKAN. */
         if ($unit !== 'TEKNOLOGI INFORMASI') {
-            // Jika $unit bukan 'TEKNOLOGI INFORMASI'
             $patients = $patients->filter(function ($patient) use ($serviceUnit) {
                 return $patient->ServiceUnitName == $serviceUnit;
+            });
+
+            $beds = $beds->filter(function ($bed) use ($serviceUnit) {
+                return $bed->ServiceUnitName == $serviceUnit;
             });
         }
 
@@ -33,54 +38,118 @@ class RanapController extends Controller
         Log::info('Service Unit: ' . $serviceUnit);
 
         /* WARNA HEADER KARTU BERDASARKAN customerType (PENJAMIN BAYAR). */
-        $customerTypeColors = [
-            'Rekanan' => 'orange',
-            'Perusahaan' => 'pink',
-            'Yayasan' => 'lime',
-            'Karyawan - FASKES' => 'green',
-            'Karyawan - PTGJ' => 'lightgreen',
-            'Pemerintah' => 'red',
-            'Rumah Sakit' => 'aqua',
-            'BPJS - Kemenkes' => 'yellow',
-            'Pribadi' => 'lightblue',
-        ];
+        $customerTypeColors = DB::table('customer_type_colors')->pluck('color', 'customer_type');
 
         foreach ($patients as $patient) {
             // Patient's short note.
             $patient->short_note = $patient->CatRencanaPulang ? Str::limit($patient->CatRencanaPulang, 10) : null;
-
-            // Mengambil waktu rencana pulang
-            $dischargeTime = Carbon::parse($patient->RencanaPulang);
-
-            // Mengambil waktu saat ini.
             $currentTime = Carbon::now();
+            $status = $patient->Keterangan;
+            $dischargeTime = Carbon::parse($patient-> RencanaPulang);
 
-            // Menghitung waktu tunggu
-            if ($dischargeTime->gt($currentTime)) {
-                // Jika waktu rencana pulang di masa depan
-                $waitTime = '00:00:00'; // Waktu tunggu belum dimulai
-                $waitTimeInSeconds = 0; // Inisialisasi waitTimeInSeconds sebagai 0.
+            // Mapping status ke kolom tabel.
+            $column = $this-> mapStatusToColumn($status);
+
+            // Cek apakah entri pasien sudah ada di tabel patient_transitions
+            $transition = patient_transition::firstOrCreate(
+                ['MedicalNo' => $patient->MedicalNo], // Kunci unik
+                [
+                    'PatientName' => $patient->PatientName,
+                    'ServiceUnitName' => $patient->ServiceUnitName,
+                    'RencanaPulang' => $patient->RencanaPulang,
+                    'SelesaiBilling' => $patient->SelesaiBilling,
+                ]
+            );
+
+            // Jika data baru dibuat, gunakan dischargeTime untuk kolom status.
+            if ($transition->wasRecentlyCreated) {
+                // Cek dischargeTime dibandingkan currentTime.
+                if ($dischargeTime->gt($currentTime)) {
+                    $dischargeTime = $currentTime;
+                }
+                $transition->update([$column => $dischargeTime]);
+                $startTime = $dischargeTime;
             } else {
-                // Menghitung selisih waktu
-                $waitTimeInSeconds = $dischargeTime->diffInSeconds($currentTime);
+                // Jika kolom status terkait kosong, isi dengan currentTime.
+                if (!$transition->{$column}) {
+                    $transition->update([$column => $currentTime]);
+                    $startTime = $currentTime;
+                } else {
+                    // Ambil waktu mulai dari kolom status.
+                    $startTime = Carbon::parse($transition->{$column})->setTimezone('Asia/Jakarta');
 
-                // Format waktu tunggu dalam format hh:mm:ss
-                $waitTime = gmdate('H:i:s', $waitTimeInSeconds);
-            }    
-            $patient->wait_time = $waitTime;
+                    // Validasi waktu mulai: jika tidak valid, isi dengan currentTime
+                    if (!$startTime || $startTime->gt($currentTime)) {
+                        $transition->update([$column => $currentTime]);
+                        $startTime = $currentTime;
+                    }
+                }
+            }
 
-            // Menentukan stndard waktu berdasarkan status.
-            $status = $patient->Keterangan; // Ambil status pasien dari variabel Keterangan.
-            $standardWaitTimeInSeconds = $status === 'Tunggu Farmasi' ? 3600 : 1800; // Default time 1800 detik (30 menit). Jika Tunggu Farmasi standard nya 1 jam.
-            
-            // Persentase progress dan progress bar.
-            $progressPercentage = min(($waitTimeInSeconds / $standardWaitTimeInSeconds) * 100, 100);
-            $patient->progress_percentage = $progressPercentage;
+            $patient->start_time = $startTime->toIso8601String();
+
+            // Ambil standard_time dari tabel standard_times.
+            $standardTime = DB::table('standard_times')
+                            ->where('keterangan', $patient->Keterangan)
+                            ->value('standard_time');
+            $patient->standard_time = $standardTime;
+
+            // Mengecek unit jangdik dengan standing order.
+            $orderTypes = DB::table('order_types')->get();
+
+            if ($patient->TungguJangdik) {
+                foreach ($orderTypes as $orderType) {
+                    if (str_contains($patient->TungguJangdik, $orderType->code_prefix)) {
+                        $patient->order_icon = $orderType->icon_path;
+                        break;
+                    }
+                }
+            }
+        }
+
+        foreach ($beds as $bed) {
+            $GCBedStatus = $bed->GCBedStatus;
+            $BedStatus = $bed->BedStatus;
+
+            $bedCleaningRecord = bed_cleaning_record::firstOrCreate(
+                ['BedCode' => $bed->BedCode], // Kunci unik
+                [
+                    'ServiceUnitName' => $bed->ServiceUnitName,
+                    'LastUnoccupiedDate' => $bed->LastUnoccupiedDate,
+                ]
+            );
+
+            // Jika status bed menunjukkan sedang dibersihkan
+            if ($GCBedStatus == '0116^H' || $BedStatus == 'SEDANG DIBERSIHKAN') {
+                // Jika bed belum tercatat, isi BedUnoccupiedInReality dan ExpectedDoneCleaning
+                if (!$bedCleaningRecord->BedUnoccupiedInReality) {
+                    $bedCleaningRecord->BedUnoccupiedInReality = Carbon::now();
+                    $bedCleaningRecord->ExpectedDoneCleaning = Carbon::now()->addMinutes(20);
+                    $bedCleaningRecord->save();
+                }
+            } elseif ($GCBedStatus != '0116^H' && $BedStatus != 'SEDANG DIBERSIHKAN') {
+                // Jika bed sudah selesai dibersihkan, isi DoneCleaningInReality dan CleaningDuration
+                if (!$bedCleaningRecord->DoneCleaningInReality) {
+                    $bedCleaningRecord->DoneCleaningInReality = Carbon::now();
+
+                    // Menghitung durasi pembersihan bed
+                    if ($bedCleaningRecord->BedUnoccupiedInReality) {
+                        $bedCleaningRecord->CleaningDuration = Carbon::parse($bedCleaningRecord->DoneCleaningInReality)
+                                                                ->diffInSeconds(Carbon::parse($bedCleaningRecord->BedUnoccupiedInReality));
+                    }
+                    $bedCleaningRecord->save();
+                }
+            }
+            $bedStandardTime = DB::table('standard_times')
+                            ->where('keterangan', $bed->BedStatus)
+                            ->value('standard_time');
+            $bed->bed_standard_time = $bedStandardTime;
         }
 
         return response()->json([
             'patients' => $patients->values()->toArray(),
-            'customerTypeColors' => $customerTypeColors,
+            'beds' => $beds->values()->toArray(),
+            'customerTypeColors' => $customerTypeColors->toArray(),
         ]);
     }
 
@@ -97,21 +166,10 @@ class RanapController extends Controller
     // Fungsi untuk mendapatkan ServiceUnitName berdasarkan kode_bagian
     protected function getServiceUnit($unit)
     {
-        // Mapping kode_bagian ke ServiceUnitName
-        $serviceUnits = [
-            'TJAN KHEE SWAN TIMUR' => 'TJAN KHEE SWAN TIMUR',
-            'TJAN KHEE SWAN BARAT' => 'TJAN KHEE SWAN BARAT',
-            'UPI DEWASA' => 'UPI DEWASA',
-            'UPI ANAK' => 'UPI ANAK',
-            'KWEE HAN TIONG' => 'KWEE HAN TIONG',
-            'RUANG ASA' => 'RUANG ASA',
-            'PERAWATAN ANAK' => 'PERAWATAN ANAK',
-            'PERAWATAN IBU' => 'PERAWATAN IBU',
-            'KBY FISIO GD.IBU' => 'KBY FISIO GD.IBU',
-            'KEBIDANAN' => 'KEBIDANAN',
-            'TEKNOLOGI INFORMASI' => 'TEKNOLOGI INFORMASI',
-        ];
-
-        return $serviceUnits[$unit] ?? null;
+        return DB::table('service_units')->where('unit_code', $unit)->value('unit_service_name');
     }
+    
+    protected function mapStatusToColumn($status) {
+        return DB::table('status_mappings')->where('keterangan', $status)->value('status_value');
+    }    
 }

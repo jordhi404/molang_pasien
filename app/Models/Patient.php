@@ -113,6 +113,10 @@ class Patient extends Model
                     ChargeClassName,
                     RencanaPulang,
                     CatRencanaPulang,
+                    SelesaiBilling,
+                    Keperawatan,
+                    TungguJangdik,
+                    TungguFarmasi,
                     CASE
                         WHEN Keperawatan IS NOT NULL AND TungguJangdik IS NULL AND TungguFarmasi IS NOT NULL THEN 'Tunggu Keperawatan'
                         WHEN TungguJangdik IS NOT NULL AND Keperawatan IS NOT NULL AND TungguFarmasi IS NOT NULL THEN 'Tunggu Jangdik'
