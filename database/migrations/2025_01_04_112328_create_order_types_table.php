@@ -12,18 +12,17 @@ return new class extends Migration
      */
     public function up(): void
     {
-        Schema::connection('pgsql')->create('ip_mappings', function (Blueprint $table) {
+        Schema::create('order_types', function (Blueprint $table) {
             $table->id();
-            $table->string('ip_address')->unique();
-            $table->string('unit');
+            $table->string('code_prefix')->unique();
+            $table->string('icon_path');
             $table->timestamps();
         });
 
         // Seed initial data
-        DB::table('ip_mappings')->insert([
-            ['ip_address' => '10.100.18.154', 'unit' => 'TEKNOLOGI INFORMASI'],
-            ['ip_address' => '10.100.18.25', 'unit' => 'RUANG ASA'],
-            ['ip_address' => '127.0.0.1', 'unit' => 'TEKNOLOGI INFORMASI']
+        DB::table('order_types')->insert([
+            ['code_prefix' => 'LAC', 'icon_path' => '/Logo_img/microscope.png'],
+            ['code_prefix' => 'RAC', 'icon_path' => '/Logo_img/radiation.png'],
         ]);
     }
 
@@ -32,6 +31,6 @@ return new class extends Migration
      */
     public function down(): void
     {
-        Schema::dropIfExists('ip_mappings');
+        Schema::dropIfExists('order_types');
     }
 };

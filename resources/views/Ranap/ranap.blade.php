@@ -9,12 +9,19 @@
     <link rel="stylesheet" href="extra/style.css">
 </head>
 <body>
+    <div id="loading-indicator" style="display: none;">
+        <div class="overlay"></div>
+        <div class="spinner">
+            <img src="{{ asset('Logo_img/ambulance.gif') }}" alt="Ambulance loading" id="ambulance-load">
+            <p id="loading-text">LOADING...</p>
+        </div>
+    </div>
     <div class="container">
         <nav class="navbar navbar-expand-sm">
             <div class="d-flex align-items-center justify-content-start">
                 <!-- <img src="{{ asset('Logo_img/hospital-bed.png') }}" alt="ranap" style="height: 50px; width: 40px; margin-right: 20px; margin-bottom:10px"> -->
                 <div class="d-flex flex-column">
-                    <h6 class="mb-1"><strong>PASIEN RENCANA PULANG, {{ date('d F Y') }}</strong></h6>
+                    <h6 class="mb-1"><strong>PASIEN RENCANA PULANG, {{ \Carbon\Carbon::now()->translatedFormat('d F Y') }}</strong></h6>
                 </div>
             </div>
             <div class="ma-auto">
@@ -25,17 +32,6 @@
     
     <div class="content-container">
         <div class="row d-flex">
-
-            <!-- Kolom Jangdik -->
-            <div class="col" id="jangdik-column">
-                <div class="header" id="column-title">
-                    Jangdik
-                </div>
-                <hr class="border-5"/>
-                <div class="scrollable" id="jangdik-list">
-                    <!-- Data akan di-load menggunakan AJAX -->
-                </div>
-            </div>
 
             <!-- Kolom Keperawatan -->
             <div class="col" id="keperawatan-column">
@@ -77,6 +73,17 @@
                 </div>
                 <hr class="border-5"/>
                 <div class="scrollable" id="selesaiKasir-list">
+                    <!-- Data akan di-load menggunakan AJAX -->
+                </div>
+            </div>
+
+            <!-- Kolom Bed -->
+            <div class="col" id="toClean-list">
+                <div class="header" id="column-title">
+                    Bed Dibersihkan
+                </div>
+                <hr class="border-5"/>
+                <div class="scrollable" id="bed-list">
                     <!-- Data akan di-load menggunakan AJAX -->
                 </div>
             </div>

@@ -64,30 +64,67 @@
 }
 
 body {
-    background: linear-gradient(60deg, rgb(77, 241, 143), rgb(186, 243, 106), rgb(77, 241, 143));
+    background: #ffffff;
     font-family: Arial, sans-serif;
-    height: 100svh;
+    height: 93vh;
     min-width: 900px;
     padding: 0;
     margin: 0; 
 }
 
+/* Indikator loading data */
+.overlay {
+    position: fixed;
+    top: 0;
+    left: 0;
+    width: 100%;
+    height: 100%;
+    background: rgba( 0, 0, 0, 0.5 );
+    z-index: 9998;
+}
+
+.spinner {
+    position: fixed;
+    top: 50%;
+    left: 50%;
+    transform: translate(-50%, -50%);
+    text-align: center;
+    z-index: 9999;
+}
+
+#ambulance-load {
+    height: 30vh;
+    width: 27vw;
+    margin: 0 auto 5px auto;
+}
+
+#loading-text {
+    font-size: 16px;
+    color: white;
+    font-weight: bold;
+}
+
+@keyframes spin {
+    0% { transform: rotate(0deg); }
+    100% { transform: rotate(360deg); }
+}
+
+/* Container judul */
 .container {
     width: 100%;
     max-width: 100%;
     height: 2rem;
     padding: 0;
     margin: 0;
-    background: rgba( 255, 255, 255, 0.25 );
-    box-shadow: 0 8px 32px 0 rgba( 31, 38, 135, 0.37 );
-    backdrop-filter: blur( 50px );
-    -webkit-backdrop-filter: blur( 20px );
-    border-radius: 5px;
+    background: #d1d1d1;
+    border-radius: 2px;
     border: 1px solid rgba( 255, 255, 255, 0.18 );
 }
 
 .navbar .d-flex.flex-column {
     margin-right: auto;
+    padding-bottom: 3px;
+    font-size: 18px;
 }
 .navbar p {
     font-style:italic;
@@ -107,26 +144,25 @@ body {
     margin: 0;
 }
 
+/* Konten dashboard */
 .content-container {
-    margin: 10px;
-    margin-right: 0;
-    margin-left: 0;
+    height: 100%;
+    max-height: 100%;
+    width: 100%;
     padding: 10px;
     display: flex;
     flex-direction: column;
     padding-top: 5px;
-    background: rgba( 255, 255, 255, 0.25 );
-    box-shadow: 0 8px 32px 0 rgba( 31, 38, 135, 0.37 );
-    backdrop-filter: blur( 20px );
-    -webkit-backdrop-filter: blur( 20px );
+    background: rgba(240, 240, 240, 0.411);
     border-radius: 2px;
-    border: 1px solid rgba( 255, 255, 255, 0.18 );
+    border: 1px solid rgba(0, 0, 0, 0.23);
+    overflow-y: hidden;
 }
 
 .col {
     display: flex;
     width: 80%;
-    max-height: 100vh;
+    height: 100%;
     flex-direction: column;
     border-bottom-left-radius: 5px;
     border-bottom-right-radius: 5px;
@@ -141,7 +177,11 @@ body {
 #column-title {
     font-size: 15px;
     font-weight: bold;
-    
+}
+
+.order-icon {
+    height: 4vh;
+    width: 2vw;
 }
 
 .border-5 {
@@ -210,17 +250,6 @@ body {
 
 .progress-bar-blue {
     background-color: blue;
-}
-
-/* Fitur popover note pasien */
-.more-link {
-    color: #007bff;
-    text-decoration: none;
-    cursor: pointer;
-}
-  
-.more-link:hover {
-    text-decoration: underline;
 }
 
 /* Animasi blinking kolom Selesai Kasir */
