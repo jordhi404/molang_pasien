@@ -78,7 +78,7 @@ class RekapController extends Controller
                             WHERE ReportID=7012 
                                 AND ReportParameter = CONCAT('RegistrationID = ',r.RegistrationID)) AS SelesaiBilling"),
                 DB::raw("CAST(cv.DischargeDate AS DATETIME) + CAST(cv.DischargeTime AS TIME) AS DischargeDateTime"),
-                'cv.RoomDischargeDateTime',
+                DB::raw("FORMAT(cv.RoomDischargeDateTime, 'yyyy-MM-dd HH:mm') AS RoomDischargeDateTime"),
                 DB::raw("CONCAT(DATEDIFF(SECOND, 
                             CASE 
                                 WHEN cv.PlanDischargeTime IS NULL
