@@ -50,11 +50,10 @@ class RekapController extends Controller
                 'r.ChargeClassName',
                 'r.ParamedicCode',
                 'r.ParamedicName',
-                DB::raw("CASE 
-                            WHEN cv.PlanDischargeTime IS NULL
-                            THEN CAST(cv.PlanDischargeDate AS VARCHAR) + ' ' + CAST(cv.PlanDischargeTime AS VARCHAR)
-                            ELSE CAST(cv.PlanDischargeDate AS DATETIME) + CAST(cv.PlanDischargeTime AS TIME)
-                        END AS RencanaPulang"),
+                'cv.PlanDischargeDate',
+                'cv.PlanDischargeTime',
+                'cv.DischargeDate',
+                'cv.DischargeTime',
                 DB::raw("(SELECT MAX(ProposedDate) 
                             FROM PatientChargesHD
                             WHERE VisitID=cv.VisitID 
