@@ -104,11 +104,6 @@ body {
     font-weight: bold;
 }
 
-@keyframes spin {
-    0% { transform: rotate(0deg); }
-    100% { transform: rotate(360deg); }
-}
-
 /* Container judul */
 .container {
     width: 100%;

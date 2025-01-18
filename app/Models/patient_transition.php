@@ -14,7 +14,9 @@ class patient_transition extends Model
     protected $fillable = [
         'MedicalNo', 
         'PatientName', 
-        'ServiceUnitName', 
+        'ServiceUnitName',
+        'CustomerType', 
+        'ChargeClassName', 
         'RencanaPulang',
         'Keperawatan',
         'Farmasi',
