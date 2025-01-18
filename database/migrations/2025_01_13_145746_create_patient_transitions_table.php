@@ -16,6 +16,8 @@ return new class extends Migration
             $table->string('MedicalNo');
             $table->string('PatientName');
             $table->string('ServiceUnitName');
+            $table->string('CustomerType');
+            $table->string('ChargeClassName');
             $table->string('RencanaPulang');
             $table->timestamp('Keperawatan')->nullable();
             $table->timestamp('Farmasi')->nullable();

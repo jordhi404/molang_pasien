@@ -56,6 +56,8 @@ class RanapController extends Controller
                 [
                     'PatientName' => $patient->PatientName,
                     'ServiceUnitName' => $patient->ServiceUnitName,
+                    'CustomerType' => $patient->CustomerType,
+                    'ChargeClassName' => $patient->ChargeClassName,
                     'RencanaPulang' => $patient->RencanaPulang,
                     'SelesaiBilling' => $patient->SelesaiBilling,
                 ]
@@ -108,6 +110,7 @@ class RanapController extends Controller
         }
 
         foreach ($beds as $bed) {
+            $BedCode = $bed->BedCode; // Untuk debugging
             $GCBedStatus = $bed->GCBedStatus;
             $BedStatus = $bed->BedStatus;
 
@@ -127,7 +130,7 @@ class RanapController extends Controller
                     $bedCleaningRecord->ExpectedDoneCleaning = Carbon::now()->addMinutes(20);
                     $bedCleaningRecord->save();
                 }
-            } elseif ($GCBedStatus != '0116^H' && $BedStatus != 'SEDANG DIBERSIHKAN') {
+            } else{
                 // Jika bed sudah selesai dibersihkan, isi DoneCleaningInReality dan CleaningDuration
                 if (!$bedCleaningRecord->DoneCleaningInReality) {
                     $bedCleaningRecord->DoneCleaningInReality = Carbon::now();
@@ -144,7 +147,10 @@ class RanapController extends Controller
                             ->where('keterangan', $bed->BedStatus)
                             ->value('standard_time');
             $bed->bed_standard_time = $bedStandardTime;
+
+            Log::info('Bed status bed ' . $BedCode . ': ' . $BedStatus);
         }
+
 
         return response()->json([
             'patients' => $patients->values()->toArray(),
