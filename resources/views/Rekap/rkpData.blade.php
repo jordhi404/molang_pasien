@@ -136,7 +136,12 @@
                                     <small>{{ $row->MedicalNo }}</small>
                                 </td>
                                 <td>{{ $row->ServiceUnitName }}</td>
-                                <td>{{ $row->RencanaPulang }}</td>
+                                <td style="text-align: left;">
+                                    <img src="{{ asset('/Logo_img/calendar.png') }}" alt="calendar" style="horizontal-align: middle; margin-right: 5px; height: 15px; width: 15px">
+                                    {{ $row->PlanDischargeDate }}<br>
+                                    <img src="{{ asset('/Logo_img/clock.png') }}" alt="calendar" style="horizontal-align: middle; margin-right: 5px; height: 15px; width: 15px">
+                                    {{ $row->PlanDischargeTime }}
+                                </td>
                                 <td>{{ $row->Jangdik }}</td>
                                 <td>{{ $row->Keperawatan }}</td>
                                 <td>{{ $row->Farmasi }}</td>
