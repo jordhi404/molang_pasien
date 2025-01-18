@@ -102,7 +102,7 @@ class RanapController extends Controller
             if ($patient->TungguJangdik) {
                 foreach ($orderTypes as $orderType) {
                     if (str_contains($patient->TungguJangdik, $orderType->code_prefix)) {
-                        $patient->order_icon = $orderType->icon_path;
+                        $patient->order_icon = '/molang_pasien' . $orderType->icon_path;
                         break;
                     }
                 }
