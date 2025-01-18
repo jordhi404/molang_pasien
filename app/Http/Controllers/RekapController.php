@@ -52,8 +52,6 @@ class RekapController extends Controller
                 'r.ParamedicName',
                 'cv.PlanDischargeDate',
                 'cv.PlanDischargeTime',
-                'cv.DischargeDate',
-                'cv.DischargeTime',
                 DB::raw("(SELECT MAX(ProposedDate) 
                             FROM PatientChargesHD
                             WHERE VisitID=cv.VisitID 
