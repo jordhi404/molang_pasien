@@ -6,12 +6,8 @@ use App\Http\Controllers\RekapController;
 use App\Http\Controllers\ExportController;
 use App\Http\Middleware\checkIpMapping;
 
-Route::get('/', function () {
-    return view('welcome');
-});
-
 // Route dashboard ranap.
-Route::get('/ranap', [RanapController::class, 'showDashboardRanap'])->name('ranap');
+Route::get('/', [RanapController::class, 'showDashboardRanap'])->name('ranap');
 
 // Route untuk api data.
 Route::get('/ajax/patients', [RanapController::class, 'getPatientDataAjax'])->name('ajax.patients');
