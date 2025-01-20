@@ -52,28 +52,28 @@ class RekapController extends Controller
                 'r.ParamedicName',
                 'cv.PlanDischargeDate',
                 'cv.PlanDischargeTime',
-                DB::raw("(SELECT MAX(ProposedDate) 
+                DB::raw("(SELECT FORMAT(MAX(ProposedDate), 'yyyy-MM-dd HH:mm')
                             FROM PatientChargesHD
                             WHERE VisitID=cv.VisitID 
                                 AND GCTransactionStatus<>'X121^999' 
                                 AND GCTransactionStatus NOT IN ('X121^001','X121^002','X121^003')
                                 AND HealthcareServiceUnitID IN (82,83,99,138,140)
                                 AND ProposedDate IS NOT NULL) AS Jangdik"),
-                DB::raw("(SELECT MAX(ProposedDate) 
+                DB::raw("(SELECT FORMAT(MAX(ProposedDate), 'yyyy-MM-dd HH:mm')
                             FROM PatientChargesHD
                             WHERE VisitID=cv.VisitID 
                                 AND GCTransactionStatus<>'X121^999' 
                                 AND GCTransactionStatus NOT IN ('X121^001','X121^002','X121^003')
                                 AND HealthcareServiceUnitID NOT IN (82,83,99,138,140,101,137)
                                 AND ProposedDate IS NOT NULL) AS Keperawatan"),
-                DB::raw("(SELECT MAX(ProposedDate) 
+                DB::raw("(SELECT FORMAT(MAX(ProposedDate), 'yyyy-MM-dd HH:mm')
                             FROM PatientChargesHD
                             WHERE VisitID=cv.VisitID 
                                 AND GCTransactionStatus<>'X121^999' 
                                 AND GCTransactionStatus NOT IN ('X121^001','X121^002','X121^003')
                                 AND HealthcareServiceUnitID IN (101,137)
                                 AND ProposedDate IS NOT NULL) AS Farmasi"),
-                DB::raw("(SELECT MAX(PrintedDate) 
+                DB::raw("(SELECT FORMAT(MAX(PrintedDate), 'yyyy-MM-dd HH:mm')
                             FROM ReportPrintLog 
                             WHERE ReportID=7012 
                                 AND ReportParameter = CONCAT('RegistrationID = ',r.RegistrationID)) AS SelesaiBilling"),

@@ -142,11 +142,51 @@
                                     <img src="{{ asset('/Logo_img/clock.png') }}" alt="clock" style="horizontal-align: middle; margin-right: 5px; height: 15px; width: 15px">
                                     {{ $row->PlanDischargeTime }}
                                 </td>
-                                <td>{{ $row->Jangdik }}</td>
-                                <td>{{ $row->Keperawatan }}</td>
-                                <td>{{ $row->Farmasi }}</td>
-                                <td>{{ $row->SelesaiBilling }}</td>                                                        
-                                <td>{{ $row->RoomDischargeDateTime }}</td>                            
+                                <td style="text-align: left;">
+                                    @if (!empty($row->Jangdik))
+                                        <?php list($date, $time) = explode(' ', $row->Jangdik); ?>
+                                        <div><span><img src="{{ asset('/Logo_img/calendar.png') }}" alt="calendar" style="horizontal-align: middle; margin-right: 5px; height: 15px; width: 15px"> {{ $date }}</span></div>
+                                        <div><span><img src="{{ asset('/Logo_img/clock.png') }}" alt="clock" style="horizontal-align: middle; margin-right: 5px; height: 15px; width: 15px"> {{ $time }}</span></div>
+                                    @else
+                                        <span> </span>
+                                    @endif
+                                </td>
+                                <td style="text-align: left;">
+                                    @if (!empty($row->Keperawatan))
+                                        <?php list($date, $time) = explode(' ', $row->Keperawatan); ?>
+                                        <div><span><img src="{{ asset('/Logo_img/calendar.png') }}" alt="calendar" style="horizontal-align: middle; margin-right: 5px; height: 15px; width: 15px"> {{ $date }}</span></div>
+                                        <div><span><img src="{{ asset('/Logo_img/clock.png') }}" alt="clock" style="horizontal-align: middle; margin-right: 5px; height: 15px; width: 15px"> {{ $time }}</span></div>
+                                    @else
+                                        <span> </span>
+                                    @endif
+                                </td>
+                                <td style="text-align: left;">
+                                    @if (!empty($row->Farmasi))
+                                        <?php list($date, $time) = explode(' ', $row->Farmasi); ?>
+                                        <div><span><img src="{{ asset('/Logo_img/calendar.png') }}" alt="calendar" style="horizontal-align: middle; margin-right: 5px; height: 15px; width: 15px"> {{ $date }}</span></div>
+                                        <div><span><img src="{{ asset('/Logo_img/clock.png') }}" alt="clock" style="horizontal-align: middle; margin-right: 5px; height: 15px; width: 15px"> {{ $time }}</span></div>
+                                    @else
+                                        <span> </span>
+                                    @endif
+                                </td>
+                                <td style="text-align: left;">
+                                    @if (!empty($row->SelesaiBilling))
+                                        <?php list($date, $time) = explode(' ', $row->SelesaiBilling); ?>
+                                        <div><span><img src="{{ asset('/Logo_img/calendar.png') }}" alt="calendar" style="horizontal-align: middle; margin-right: 5px; height: 15px; width: 15px"> {{ $date }}</span></div>
+                                        <div><span><img src="{{ asset('/Logo_img/clock.png') }}" alt="clock" style="horizontal-align: middle; margin-right: 5px; height: 15px; width: 15px"> {{ $time }}</span></div>
+                                    @else
+                                        <span> </span>
+                                    @endif
+                                </td>                                                        
+                                <td style="text-align: left;">
+                                    @if (!empty($row->RoomDischargeDateTime))
+                                        <?php list($date, $time) = explode(' ', $row->RoomDischargeDateTime); ?>
+                                        <div><span><img src="{{ asset('/Logo_img/calendar.png') }}" alt="calendar" style="horizontal-align: middle; margin-right: 5px; height: 15px; width: 15px"> {{ $date }}</span></div>
+                                        <div><span><img src="{{ asset('/Logo_img/clock.png') }}" alt="clock" style="horizontal-align: middle; margin-right: 5px; height: 15px; width: 15px"> {{ $time }}</span></div>
+                                    @else
+                                        <span> </span>
+                                    @endif
+                                </td>                            
                                 <td>
                                     <span><strong>{{ $row->rpul_roomclose }}</strong></span>
                                     <div class="chart-bar" id="chart-bar-{{ $row->MedicalNo }}">
