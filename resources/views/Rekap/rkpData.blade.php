@@ -81,7 +81,7 @@
         </div>
     </div>
     <div class="container-fluid mt-2">
-        <h2>Rekap Data Kepulangan Pasien</h2>
+        <h4>REKAP DATA KEPULANGAN PASIEN</h4>
         
         <form action="{{ route('rkp') }}" method="GET">
             <div class="row mb-3">
