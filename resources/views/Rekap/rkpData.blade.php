@@ -211,13 +211,31 @@
                             legend: {
                                 display: false
                             },
+                            datalabels: {
+                                anchor: function(context) {
+                                    return context.dataset.data[0] < 20 ? 'end' : 'middle';
+                                },
+                                align: function(context) {
+                                    return context.dataset.data[0] < 20 ? 'end' : 'middle';
+                                },
+                                color: 'black',
+                                font: {
+                                    size: 14,
+                                    weight: 'bold'
+                                },
+                                formatter: function(value) {
+                                    return value + '%';
+                                }
+                            }
                         }
-                    }
+                    },
+                    plugins: [ChartDataLabels]
                 });
             @endforeach
         });
     </script>
     <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+    <script src="https://cdn.jsdelivr.net/npm/chartjs-plugin-datalabels"></script>
     <script src="https://ajax.googleapis.com/ajax/libs/jquery/3.5.1/jquery.min.js"></script>
     <script src="https://cdn.jsdelivr.net/npm/@popperjs/core@2.11.8/dist/umd/popper.min.js"></script>
     <script src="bootstrap-5.3.3-dist/js/bootstrap.bundle.min.js"></script>
