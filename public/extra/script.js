@@ -35,6 +35,7 @@ $(document).ready(function() {
                     patients.forEach(function(patient) {
                         // Warna berdasarkan CustomerType.
                         let headerColor = customerTypeColors[patient.CustomerType] || 'gray';
+                        let customerTypeIcon = patient.customerTypeIcons ? `<img src="${patient.customerTypeIcons}" style="height: 33px" alt="customerTypeIcon" class="customer-type-icon">` : '';
                         let note = patient.short_note ? `<strong>Note:</strong> ${patient.short_note}` : '';
 
                         // Menambah icon untuk jangdik.
@@ -44,7 +45,10 @@ $(document).ready(function() {
                         let patientCard = `
                             <div class="card">
                                 <div class="card-header" style="background-color: ${headerColor};">
-                                    <strong>${patient.PatientName.length > 15 ? patient.PatientName.slice(0, 15) + '...' : patient.PatientName} / ${patient.BedCode}</strong>
+                                    <div class="patient-name" style="flex-grow: 1; width: 10vw;">
+                                        <strong>${patient.PatientName.length > 15 ? patient.PatientName.slice(0, 15) + '...' : patient.PatientName} / ${patient.BedCode}</strong>
+                                    </div>
+                                    <span class="customerBadge badge-${patient.CustomerType}">${customerTypeIcon}</span>
                                 </div>
                                 <div class="card-body d-flex justify-content-between align-items-center">
                                     <div> 
@@ -70,7 +74,10 @@ $(document).ready(function() {
                         let selesaiKasirCard = `
                             <div class="card">
                                 <div class="card-header" style="background-color: ${headerColor};">
-                                    <strong>${patient.PatientName.length > 15 ? patient.PatientName.slice(0, 15) + '...' : patient.PatientName} / ${patient.BedCode}</strong>
+                                    <div class="patient-name" style="flex-grow: 1; width: 10vw;">
+                                        <strong>${patient.PatientName.length > 15 ? patient.PatientName.slice(0, 15) + '...' : patient.PatientName} / ${patient.BedCode}</strong>
+                                    </div>
+                                    <span class="customerBadge badge-${patient.CustomerType}">${customerTypeIcon}</span>
                                 </div>
                                 <div class="card-body" id="selesaiCardBody">
                                     <p class="blinking-text"><strong>Administrasi Selesai.</strong></p>

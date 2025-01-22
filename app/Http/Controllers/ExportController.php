@@ -27,38 +27,63 @@ class ExportController extends Controller
                 'r.ChargeClassName',
                 'r.ParamedicCode',
                 'r.ParamedicName',
+                'cv.VisitID',
+                DB::raw("(SELECT FORMAT(MAX(phd.CreatedDate), 'dd/MM/yyyy HH:mm') 
+                            FROM PatientVisitNote phd
+                            WHERE cv.VisitID = phd.VisitID 
+                                AND phd.IsDeleted = 0
+                                AND phd.GCPatientNoteType IN ('X011^011', 'X011^004')) AS DokterVisit"),
                 DB::raw("CASE 
-                            WHEN cv.PlanDischargeTime IS NULL
-                            THEN CAST(cv.PlanDischargeDate AS VARCHAR) + ' ' + CAST(cv.PlanDischargeTime AS VARCHAR)
-                            ELSE CAST(cv.PlanDischargeDate AS DATETIME) + CAST(cv.PlanDischargeTime AS TIME)
-                        END AS RencanaPulang"),
-                DB::raw("(SELECT MAX(ProposedDate) 
+                            WHEN cv.PlanDischargeTime IS NULL 
+                                THEN CAST(cv.PlanDischargeDate AS VARCHAR) + ' ' + CAST(cv.PlanDischargeTime AS VARCHAR) 
+                                ELSE CAST(cv.PlanDischargeDate AS DATETIME) + CAST(cv.PlanDischargeTime AS TIME) 
+                            END AS RencanaPulang"),
+                DB::raw("(SELECT FORMAT(MAX(ProposedDate), 'dd/MM/yyyy HH:mm')
                             FROM PatientChargesHD
                             WHERE VisitID=cv.VisitID 
+                                AND ProposedDate >= cv.PlanDischargeDate
                                 AND GCTransactionStatus<>'X121^999' 
                                 AND GCTransactionStatus NOT IN ('X121^001','X121^002','X121^003')
                                 AND HealthcareServiceUnitID IN (82,83,99,138,140)
                                 AND ProposedDate IS NOT NULL) AS Jangdik"),
-                DB::raw("(SELECT MAX(ProposedDate) 
+                DB::raw("(SELECT FORMAT(MAX(ProposedDate), 'dd/MM/yyyy HH:mm')
                             FROM PatientChargesHD
                             WHERE VisitID=cv.VisitID 
-                                AND GCTransactionStatus<>'X121^999' 
+                                AND GCTransactionStatus<>'X121^999'
+                                AND ProposedDate >= cv.PlanDischargeDate 
                                 AND GCTransactionStatus NOT IN ('X121^001','X121^002','X121^003')
                                 AND HealthcareServiceUnitID NOT IN (82,83,99,138,140,101,137)
                                 AND ProposedDate IS NOT NULL) AS Keperawatan"),
-                DB::raw("(SELECT MAX(ProposedDate) 
+                DB::raw("(SELECT FORMAT(MAX(ProposedDate), 'dd/MM/yyyy HH:mm')
                             FROM PatientChargesHD
                             WHERE VisitID=cv.VisitID 
+                                AND ProposedDate >= cv.PlanDischargeDate
                                 AND GCTransactionStatus<>'X121^999' 
                                 AND GCTransactionStatus NOT IN ('X121^001','X121^002','X121^003')
                                 AND HealthcareServiceUnitID IN (101,137)
                                 AND ProposedDate IS NOT NULL) AS Farmasi"),
-                DB::raw("(SELECT MAX(PrintedDate) 
+                DB::raw("(SELECT FORMAT(MAX(CreatedDate), 'dd/MM/yyyy HH:mm') 
+                            FROM PatientBill 
+                            WHERE RegistrationID = cv.RegistrationID 
+                                AND GCTransactionStatus <> 'X121^999' 
+                                AND CreatedDate IS NOT NULL) AS Billing"),
+                DB::raw("(SELECT FORMAT(MAX(CreatedDate), 'dd/MM/yyyy HH:mm') 
+                            FROM PatientPaymentHd 
+                            WHERE RegistrationID = cv.RegistrationID 
+                                AND GCTransactionStatus <> 'X121^999' 
+                                AND CreatedDate IS NOT NULL) AS Bayar"),
+                DB::raw("(SELECT TOP 1 TotalPatientBillAmount 
+                            FROM PatientPaymentHd 
+                            WHERE RegistrationID = cv.RegistrationID 
+                                AND GCTransactionStatus <> 'X121^999' 
+                                AND PaymentDate IS NOT NULL 
+                                ORDER BY PaymentID DESC) AS Excess"),
+                DB::raw("(SELECT FORMAT(MAX(PrintedDate), 'dd/MM/yyyy HH:mm') 
                             FROM ReportPrintLog 
-                            WHERE ReportID=7012 
-                                AND ReportParameter = CONCAT('RegistrationID = ',r.RegistrationID)) AS SelesaiBilling"),
+                            WHERE ReportID = 7012 
+                                AND ReportParameter = CONCAT('RegistrationID = ', r.RegistrationID)) AS BolehPulang"),
                 DB::raw("CAST(cv.DischargeDate AS DATETIME) + CAST(cv.DischargeTime AS TIME) AS DischargeDateTime"),
-                'cv.RoomDischargeDateTime',
+                DB::raw("FORMAT(cv.RoomDischargeDateTime, 'dd/MM/yyyy HH:mm') AS RoomDischargeDateTime"),
                 DB::raw("CONCAT(DATEDIFF(SECOND, 
                             CASE 
                                 WHEN cv.PlanDischargeTime IS NULL
@@ -97,34 +122,44 @@ class ExportController extends Controller
 
         // Menambahkan header kolom
         $sheet->setCellValue('A1', 'PASIEN');
-        $sheet->setCellValue('B1', 'RUANG PERAWATAN');
-        $sheet->setCellValue('C1', 'RENCANA PULANG');
-        $sheet->setCellValue('D1', 'JANGDIK');
-        $sheet->setCellValue('E1', 'KEPERAWATAN');
-        $sheet->setCellValue('F1', 'FARMASI');
-        $sheet->setCellValue('G1', 'SELESAI BILLING');
-        $sheet->setCellValue('H1', 'WAKTU PASIEN PULANG');
-        $sheet->setCellValue('I1', 'RENCANA PULANG - PASIEN PULANG (hh:mm)');
+        $sheet->setCellValue('B1', 'PENJAMIN BAYAR');
+        $sheet->setCellValue('C1', 'RUANG PERAWATAN');
+        $sheet->setCellValue('D1', 'VISIT TERAKHIR');
+        $sheet->setCellValue('E1', 'NAMA DOKTER');
+        $sheet->setCellValue('F1', 'RENCANA PULANG');
+        $sheet->setCellValue('G1', 'JANGDIK');
+        $sheet->setCellValue('H1', 'KEPERAWATAN');
+        $sheet->setCellValue('I1', 'FARMASI');
+        $sheet->setCellValue('J1', 'BILLING');
+        $sheet->setCellValue('K1', 'BAYAR');
+        $sheet->setCellValue('L1', 'BOLEH PULANG');
+        $sheet->setCellValue('M1', 'PASIEN PULANG');
+        $sheet->setCellValue('N1', 'RENCANA PULANG - PASIEN PULANG (hh:mm)');
 
         // Menambahkan data ke dalam file excel
         $row = 2; // Mulai dari baris kedua
         foreach ($data as $item) {
             $sheet->setCellValue('A' . $row, $item->PatientName);
-            $sheet->setCellValue('B' . $row, $item->ServiceUnitName);
-            $sheet->setCellValue('C' . $row, $item->RencanaPulang);
-            $sheet->setCellValue('D' . $row, $item->Jangdik);
-            $sheet->setCellValue('E' . $row, $item->Keperawatan);
-            $sheet->setCellValue('F' . $row, $item->Farmasi);
-            $sheet->setCellValue('G' . $row, $item->SelesaiBilling);
-            $sheet->setCellValue('H' . $row, $item->DischargeDateTime);
-            $sheet->setCellValue('I' . $row, $item->rpul_roomclose);
+            $sheet->setCellValue('B' . $row, $item->CustomerType);
+            $sheet->setCellValue('C' . $row, $item->ServiceUnitName);
+            $sheet->setCellValue('D' . $row, $item->DokterVisit);
+            $sheet->setCellValue('E' . $row, $item->ParamedicName);
+            $sheet->setCellValue('F' . $row, $item->RencanaPulang);
+            $sheet->setCellValue('G' . $row, $item->Jangdik);
+            $sheet->setCellValue('H' . $row, $item->Keperawatan);
+            $sheet->setCellValue('I' . $row, $item->Farmasi);
+            $sheet->setCellValue('J' . $row, $item->Billing);
+            $sheet->setCellValue('K' . $row, $item->Bayar);
+            $sheet->setCellValue('L' . $row, $item->BolehPulang);
+            $sheet->setCellValue('M' . $row, $item->RoomDischargeDateTime);
+            $sheet->setCellValue('N' . $row, $item->rpul_roomclose);
             $row++;
         }
 
         // Menyimpan file Excel
         $writer = new Xlsx($spreadsheet);
-        $formatted_start_date = date('Y-m-d', strtotime($start_date));
-        $formatted_end_date = date('Y-m-d', strtotime($end_date));
+        $formatted_start_date = date('d/m/Y', strtotime($start_date));
+        $formatted_end_date = date('d/m/Y', strtotime($end_date));
         $fileName = 'Rekap_Kepulangan_Pasien_' . $formatted_start_date . ' to ' . $formatted_end_date . '.xlsx';
 
         // Mengirim file ke browser

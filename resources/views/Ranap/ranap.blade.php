@@ -55,10 +55,10 @@
                 </div>
             </div>
 
-            <!-- Kolom Tunggu Kasir -->
+            <!-- Kolom Billing -->
             <div class="col" id="kasir-column">
                 <div class="header" id="column-title">
-                    Kasir
+                    Billing
                 </div>
                 <hr class="border-5"/>
                 <div class="scrollable" id="tungguKasir-list">    
@@ -66,10 +66,10 @@
                 </div>
             </div>
 
-            <!-- Kolom Selesai Kasir -->
+            <!-- Kolom Bayar/Piutang -->
             <div class="col" id="selesai-kasir-column">
                 <div class="header" id="column-title">
-                    Selesai
+                    Bayar/Piutang
                 </div>
                 <hr class="border-5"/>
                 <div class="scrollable" id="selesaiKasir-list">
