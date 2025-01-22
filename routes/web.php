@@ -12,8 +12,6 @@ Route::get('/', [RanapController::class, 'showDashboardRanap'])->name('ranap');
 // Route untuk api data.
 Route::get('/ajax/patients', [RanapController::class, 'getPatientDataAjax'])->name('ajax.patients');
 
-// Route::get('/rekap', [RekapController::class, 'showDashboardRekap'])->name('rekap.show');
-
 // Middleware untuk dashboard rekap data.
 Route::middleware([checkIpMapping::class])
     ->group(function () {

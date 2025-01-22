@@ -39,6 +39,7 @@ class RanapController extends Controller
 
         /* WARNA HEADER KARTU BERDASARKAN customerType (PENJAMIN BAYAR). */
         $customerTypeColors = DB::table('customer_type_colors')->pluck('color', 'customer_type');
+        $customerTypeIcon = DB::table('customer_type_colors')->pluck('logo_path', 'customer_type');
 
         foreach ($patients as $patient) {
             // Patient's short note.
@@ -46,6 +47,9 @@ class RanapController extends Controller
             $currentTime = Carbon::now();
             $status = $patient->Keterangan;
             $dischargeTime = Carbon::parse($patient-> RencanaPulang);
+            $customerTypeIcons = $customerTypeIcon[$patient->CustomerType] ?? null;
+
+            $patient -> customerTypeIcons = $customerTypeIcons;
 
             // Mapping status ke kolom tabel.
             $column = $this-> mapStatusToColumn($status);

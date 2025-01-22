@@ -14,8 +14,9 @@ return new class extends Migration
         Schema::create('customer_type_colors', function (Blueprint $table) {
             $table->id();
             $table->string('customer_type');
-            $table->string('color');
+            $table->string('color');                       
             $table->timestamps();
+            $table->string('logo_path'); 
         });
     }
 
