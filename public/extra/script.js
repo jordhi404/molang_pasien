@@ -71,7 +71,7 @@ $(document).ready(function() {
                             </div>
                         `;
 
-                        let selesaiKasirCard = `
+                        let bayarCard = `
                             <div class="card">
                                 <div class="card-header" style="background-color: ${headerColor};">
                                     <div class="patient-name" style="flex-grow: 1; width: 10vw;">
@@ -80,8 +80,27 @@ $(document).ready(function() {
                                     <span class="customerBadge badge-${patient.CustomerType}">${customerTypeIcon}</span>
                                 </div>
                                 <div class="card-body" id="selesaiCardBody">
-                                    <p class="blinking-text"><strong>Administrasi Selesai.</strong></p>
-                                    <img id="check-logo" src="Logo_img/accept.png" alt="Check" style="height: 20px; width: 20px; margin-right: 0;">
+                                    <img id="check-logo" src="Logo_img/accept.png" alt="Check" style="height: 20px; width: 20px; margin-left: 0;">
+                                    <p style="color: red"><strong>Administrasi Selesai.</strong></p>
+                                    ${patient.BolehPulang !==null ? `
+                                        <img id="SIP-check-logo" src="Logo_img/accept.png" alt="Check" style="height: 20px; width: 20px; margin-left: 0;">    
+                                        <p style="color: red"><strong>Cetak SIP.</strong></p>
+                                    ` : ''}
+                                </div>
+                            </div>
+                        `;
+
+                        let billingCard = `
+                            <div class="card">
+                                <div class="card-header" style="background-color: ${headerColor};">
+                                    <div class="patient-name" style="flex-grow: 1; width: 10vw;">
+                                        <strong>${patient.PatientName.length > 15 ? patient.PatientName.slice(0, 15) + '...' : patient.PatientName} / ${patient.BedCode}</strong>
+                                    </div>
+                                    <span class="customerBadge badge-${patient.CustomerType}">${customerTypeIcon}</span>
+                                </div>
+                                <div class="card-body" id="selesaiCardBody">
+                                    <p><strong>Billing Ready:</strong> ${patient.Billing}<br></p>
+                                    <p class="blinking-text"><strong>Tagihan pasien sudah siap.</strong></p>
                                 </div>
                             </div>
                         `;
@@ -91,10 +110,10 @@ $(document).ready(function() {
                             $('#keperawatan-list').append(patientCard);
                         } else if (patient.Keterangan === 'Tunggu Farmasi') {
                             $('#farmasi-list').append(patientCard);
-                        } else if (patient.Keterangan === 'Tunggu Kasir') {
-                            $('#tungguKasir-list').append(patientCard);
-                        } else if (patient.Keterangan === 'Selesai Kasir') {
-                            $('#selesaiKasir-list').append(selesaiKasirCard);
+                        } else if (patient.Keterangan === 'Billing') {
+                            $('#tungguKasir-list').append(billingCard);
+                        } else if (patient.Keterangan === 'Bayar/Piutang') {
+                            $('#selesaiKasir-list').append(bayarCard);
                         }
                     });
 
@@ -173,8 +192,8 @@ $(document).ready(function() {
                     var progressBar = document.getElementById(progressBarElementId);
 
                     if (waitTimeElement && progressBar) {
-                        // Cek jika status pasien bukan 'SelesaiKasir'
-                        if (patient.status !== 'SelesaiKasir') {
+                        // Cek jika status pasien bukan 'Bayar/Piutang'
+                        if (patient.status !== 'Bayar/Pitang') {
                             var startTime = new Date(patient.start_time).getTime();
                             var currentTime = new Date().getTime();
                             var waitTimeInSeconds = Math.floor((currentTime - startTime) / 1000);
@@ -202,7 +221,7 @@ $(document).ready(function() {
                                 }
                             }
                         } else {
-                            console.warn(`Pasien on Selesai Kasir.`);
+                            console.warn(`Pasien on Bayar/Piutang.`);
                         }
                     }
                 }
@@ -225,7 +244,7 @@ $(document).ready(function() {
                     var bedProgressBar = document.getElementById(bedProgressBarElementId);
 
                     if (cleaningTimeElement && bedProgressBar) {
-                        // Cek jika status pasien bukan 'SelesaiKasir'
+                        // Cek jika status pasien bukan 'Bayar/Piutang'
                         if (bed.GCBedStatus == '0116^H') {
                             var emptyTime = new Date(bed.LastUnoccupiedDate).getTime();
                             var timeNow = new Date().getTime();

@@ -128,7 +128,7 @@ class RekapController extends Controller
             $standardTimeInMinutes = 60; // 1 jam standar
             
             // Menghitung presentase
-            $percentage = ($timeInMinutes / $standardTimeInMinutes) * 100;
+            $percentage = max(0, ($timeInMinutes / $standardTimeInMinutes) * 100);
 
             // Menambahkan data presentase ke setiap pasien
             $patient->performancePercentage = round($percentage);
@@ -148,7 +148,7 @@ class RekapController extends Controller
             if ($patient->Jangdik && $patient->RencanaPulang) {
                 $jangdikTime = Carbon::createFromFormat('d/m/Y H:i', $patient->Jangdik);
                 $rencanaPulangTime = Carbon::parse($patient->RencanaPulang);
-                $JangdikDuration = $rencanaPulangTime->diffInMinutes($jangdikTime); // durasi dalam menit
+                $JangdikDuration = max(0, $rencanaPulangTime->diffInMinutes($jangdikTime)); // durasi dalam menit
                 if ($JangdikDuration !== null) {
                     // Menghitung jam dan menit
                     $hours = floor($JangdikDuration / 60); // Jam
@@ -167,7 +167,7 @@ class RekapController extends Controller
             if ($patient->Keperawatan && $patient->RencanaPulang) {
                 $keperawatanTime = Carbon::createFromFormat('d/m/Y H:i', $patient->Keperawatan);
                 $rencanaPulangTime = Carbon::parse($patient->RencanaPulang);
-                $KeperawatanDuration = $rencanaPulangTime->diffInMinutes($keperawatanTime); // durasi dalam menit
+                $KeperawatanDuration = max(0, $rencanaPulangTime->diffInMinutes($keperawatanTime)); // durasi dalam menit
                 if ($KeperawatanDuration !== null) {
                     $hours = floor($KeperawatanDuration / 60); // Jam
                     $minutes = $KeperawatanDuration % 60; // Menit
@@ -183,7 +183,7 @@ class RekapController extends Controller
             if ($patient->Farmasi && $patient->RencanaPulang) {
                 $farmasiTime = Carbon::createFromFormat('d/m/Y H:i', $patient->Farmasi);
                 $rencanaPulangTime = Carbon::parse($patient->RencanaPulang);
-                $FarmasiDuration = $rencanaPulangTime->diffInMinutes($farmasiTime); // durasi dalam menit
+                $FarmasiDuration = max(0, $rencanaPulangTime->diffInMinutes($farmasiTime)); // durasi dalam menit
                 if ($FarmasiDuration !== null) {
                     $hours = floor($FarmasiDuration / 60); // Jam
                     $minutes = $FarmasiDuration % 60; // Menit
@@ -199,7 +199,7 @@ class RekapController extends Controller
             if ($patient->Billing && $patient->Keperawatan) {
                 $billingTime = Carbon::createFromFormat('d/m/Y H:i', $patient->Billing);
                 $keperawatanTime = Carbon::createFromFormat('d/m/Y H:i', $patient->Keperawatan);
-                $billingDuration = $keperawatanTime->diffInMinutes($billingTime); // durasi dalam menit
+                $billingDuration = max(0, $keperawatanTime->diffInMinutes($billingTime)); // durasi dalam menit
                 if ($billingDuration !== null) {
                     $hours = floor($billingDuration / 60); // Jam
                     $minutes = $billingDuration % 60; // Menit
@@ -212,18 +212,18 @@ class RekapController extends Controller
             }
             
             //Menghitung durasi cetak SIP
-            // if ($patient->BolehPulang && $patient->Bayar) {
-            //     $cetakTime = Carbon::createFromFormat('d/m/Y H:i', $patient->BolehPulang);
-            //     $bayarTime = Carbon::createFromFormat('d/m/Y H:i', $patient->Bayar);
-            //     $cetakDuration = $bayarTime->diffInMinutes($cetakTime); // durasi dalam menit
-            //     if ($cetakDuration !== null) {
-            //         $hours = floor($cetakDuration / 60); // Jam
-            //         $minutes = $cetakDuration % 60; // Menit
-            //         $patient->cetakDurationFormatted = "{$hours} jam {$minutes} menit";
-            //     } else {
-            //         $patient->cetakDurationFormatted = null;
-            //     }
-            // }
+            if ($patient->BolehPulang && $patient->Bayar) {
+                $cetakTime = Carbon::createFromFormat('d/m/Y H:i', $patient->BolehPulang);
+                $billingTime = Carbon::createFromFormat('d/m/Y H:i', $patient->Billing);
+                $cetakDuration = max(0, $billingTime->diffInMinutes($cetakTime)); // durasi dalam menit
+                if ($cetakDuration !== null) {
+                    $hours = floor($cetakDuration / 60); // Jam
+                    $minutes = $cetakDuration % 60; // Menit
+                    $patient->cetakDurationFormatted = "{$hours} jam {$minutes} menit";
+                } else {
+                    $patient->cetakDurationFormatted = null;
+                }
+            }
         }
 
         $available_units = DB::connection('pgsql')

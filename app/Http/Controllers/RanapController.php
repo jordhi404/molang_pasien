@@ -63,7 +63,6 @@ class RanapController extends Controller
                     'CustomerType' => $patient->CustomerType,
                     'ChargeClassName' => $patient->ChargeClassName,
                     'RencanaPulang' => $patient->RencanaPulang,
-                    'SelesaiBilling' => $patient->SelesaiBilling,
                 ]
             );
 

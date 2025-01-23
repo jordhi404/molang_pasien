@@ -135,8 +135,8 @@
                                     {{ $color }} !important;
                                 ">
                                     <strong>{{ $row->PatientName }}</strong><br>
-                                    <small>{{ $row->MedicalNo }}</small><br>
-                                    {{ $row->ServiceUnitName }}
+                                    <small>[{{ $row->MedicalNo }}]</small><br>
+                                    <p>{{ $row->ServiceUnitName }}</p>
                                 </td>
                                 <td style="text-align: left;">     
                                     @if (!empty($row->DokterVisit))
@@ -189,7 +189,7 @@
                                         <?php list($date, $time) = explode(' ', $row->Billing); ?>
                                             <div><span><img src="{{ asset('/Logo_img/calendar.png') }}" alt="calendar" style="horizontal-align: middle; margin-right: 5px; height: 15px; width: 15px"> {{ $date }}</span></div>
                                             <div><span><img src="{{ asset('/Logo_img/clock.png') }}" alt="clock" style="horizontal-align: middle; margin-right: 5px; height: 15px; width: 15px"> {{ $time }}</span></div>
-                                            <div><span><img src="{{ asset('/Logo_img/stopwatch.png') }}" alt="stopwatch" style="horizontal-align: middle; margin-right: 5px; height: 15px; width: 15px"></span></div>
+                                            <div><span><img src="{{ asset('/Logo_img/stopwatch.png') }}" alt="stopwatch" style="horizontal-align: middle; margin-right: 5px; height: 15px; width: 15px">{{ $row->BillingDurationFormatted }}</span></div>
                                     @else
                                         <span> </span>
                                     @endif
@@ -207,7 +207,9 @@
                                     @if (!empty($row->BolehPulang))
                                         <?php list($date, $time) = explode(' ', $row->BolehPulang); ?>
                                             <div><span><img src="{{ asset('/Logo_img/calendar.png') }}" alt="calendar" style="horizontal-align: middle; margin-right: 5px; height: 15px; width: 15px"> {{ $date }}</span></div>
-                                            <div><span><img src="{{ asset('/Logo_img/clock.png') }}" alt="clock" style="horizontal-align: middle; margin-right: 5px; height: 15px; width: 15px"> {{ $time }}</span></div>                                    @else
+                                            <div><span><img src="{{ asset('/Logo_img/clock.png') }}" alt="clock" style="horizontal-align: middle; margin-right: 5px; height: 15px; width: 15px"> {{ $time }}</span></div>
+                                            <div><span><img src="{{ asset('/Logo_img/stopwatch.png') }}" alt="stopwatch" style="horizontal-align: middle; margin-right: 5px; height: 15px; width: 15px">{{ $row->cetakDurationFormatted }}</span></div>
+                                    @else
                                         <span> </span>
                                     @endif
                                 </td>                                                        	

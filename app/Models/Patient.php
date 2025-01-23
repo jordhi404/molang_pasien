@@ -44,6 +44,33 @@ class Patient extends Model
                                 ELSE CAST(cv.PlanDischargeDate AS VARCHAR) + ' ' + CAST(cv.PlanDischargeTime AS VARCHAR)
                             END,
                         CatRencanaPulang = cv.PlanDischargeNotes,
+                        JangdikEndTime = 
+                            (SELECT FORMAT(MAX(ProposedDate), 'dd/MM/yyyy HH:mm')
+                                FROM PatientChargesHD
+                                WHERE VisitID=cv.VisitID 
+                                    AND ProposedDate >= cv.PlanDischargeDate
+                                    AND GCTransactionStatus<>'X121^999' 
+                                    AND GCTransactionStatus NOT IN ('X121^001','X121^002','X121^003')
+                                    AND HealthcareServiceUnitID IN (82,83,99,138,140)
+                                    AND ProposedDate IS NOT NULL),
+                        KeperawatanEndTime = 
+                            (SELECT FORMAT(MAX(ProposedDate), 'dd/MM/yyyy HH:mm')
+                                FROM PatientChargesHD
+                                WHERE VisitID=cv.VisitID 
+                                    AND GCTransactionStatus<>'X121^999'
+                                    AND ProposedDate >= cv.PlanDischargeDate 
+                                    AND GCTransactionStatus NOT IN ('X121^001','X121^002','X121^003')
+                                    AND HealthcareServiceUnitID NOT IN (82,83,99,138,140,101,137)
+                                    AND ProposedDate IS NOT NULL),
+                        FarmasiEndTime = 
+                            (SELECT FORMAT(MAX(ProposedDate), 'dd/MM/yyyy HH:mm')
+                                FROM PatientChargesHD
+                                WHERE VisitID=cv.VisitID 
+                                    AND ProposedDate >= cv.PlanDischargeDate
+                                    AND GCTransactionStatus<>'X121^999' 
+                                    AND GCTransactionStatus NOT IN ('X121^001','X121^002','X121^003')
+                                    AND HealthcareServiceUnitID IN (101,137)
+                                    AND ProposedDate IS NOT NULL),
                         TungguJangdik = 
                             (SELECT TOP 1 TransactionNo 
                             FROM PatientChargesHD
@@ -78,18 +105,36 @@ class Patient extends Model
                             FROM PatientChargesHD 
                             WHERE VisitID=cv.VisitID 
                             AND GCTransactionStatus IN ('X121^001','X121^002','X121^003')),
-                        SelesaiBilling = 
-                            (SELECT TOP 1 PrintedDate 
-                            FROM ReportPrintLog 
-                            WHERE ReportID=7012 
-                            AND ReportParameter = CONCAT('RegistrationID = ',r.RegistrationID) 
-                            ORDER BY PrintedDate DESC),
                         Keterangan =
                         CASE 
                             WHEN sc.StandardCodeName = '' OR sc.StandardCodeName IS NULL
                                 THEN ''
                             ELSE sc.StandardCodeName
-                        END
+                        END,
+                        Billing =
+                            (SELECT FORMAT(MAX(CreatedDate), 'dd/MM/yyyy HH:mm') 
+                                FROM PatientBill 
+                                WHERE RegistrationID = cv.RegistrationID 
+                                    AND GCTransactionStatus <> 'X121^999' 
+                                    AND CreatedDate IS NOT NULL),
+                        Bayar =
+                            (SELECT FORMAT(MAX(CreatedDate), 'dd/MM/yyyy HH:mm') 
+                                FROM PatientPaymentHd 
+                                WHERE RegistrationID = cv.RegistrationID 
+                                    AND GCTransactionStatus <> 'X121^999' 
+                                    AND CreatedDate IS NOT NULL),
+                        Excess = 
+                            (SELECT TOP 1 TotalPatientBillAmount 
+                                FROM PatientPaymentHd 
+                                WHERE RegistrationID = cv.RegistrationID 
+                                    AND GCTransactionStatus <> 'X121^999' 
+                                    AND PaymentDate IS NOT NULL 
+                                    ORDER BY PaymentID DESC),
+                        BolehPulang = 
+                            (SELECT FORMAT(MAX(PrintedDate), 'dd/MM/yyyy HH:mm') 
+                                FROM ReportPrintLog 
+                                WHERE ReportID = 7012 
+                                    AND ReportParameter = CONCAT('RegistrationID = ', r.RegistrationID))
                     FROM vBed a
                     LEFT JOIN vPatient p ON p.MRN = a.MRN
                     LEFT JOIN PatientNotes pn ON pn.MRN = a.MRN
@@ -113,18 +158,26 @@ class Patient extends Model
                     ChargeClassName,
                     RencanaPulang,
                     CatRencanaPulang,
-                    SelesaiBilling,
+                    JangdikEndTime,
+                    KeperawatanEndTime,
+                    FarmasiEndTime,
                     Keperawatan,
                     TungguJangdik,
                     TungguFarmasi,
                     CASE
                         WHEN Keperawatan IS NOT NULL AND TungguJangdik IS NULL AND TungguFarmasi IS NOT NULL THEN 'Tunggu Keperawatan'
+                        WHEN Keperawatan IS NOT NULL AND TungguJangdik IS NULL AND TungguFarmasi IS NULL THEN 'Tunggu Keperawatan'
                         WHEN TungguJangdik IS NOT NULL AND Keperawatan IS NOT NULL AND TungguFarmasi IS NOT NULL THEN 'Tunggu Jangdik'
                         WHEN TungguFarmasi IS NOT NULL AND Keperawatan IS NULL AND TungguJangdik IS NULL THEN 'Tunggu Farmasi'
-                        WHEN RegistrationStatus = 0 AND OutStanding > 0 AND SelesaiBilling IS NULL THEN 'Tunggu Kasir'
-                        WHEN RegistrationStatus = 1 AND OutStanding = 0 AND SelesaiBilling IS NULL THEN 'Tunggu Kasir'
-                        WHEN RegistrationStatus = 1 AND OutStanding = 0 AND SelesaiBilling IS NOT NULL THEN 'Selesai Kasir'
-                    END AS Keterangan
+                        WHEN RegistrationStatus = 0 AND OutStanding > 0 AND Billing IS NULL AND Bayar IS NULL THEN 'Billing'
+                        WHEN RegistrationStatus = 1 AND OutStanding = 0 AND Billing IS NULL AND Bayar IS NULL THEN 'Billing'
+                        WHEN RegistrationStatus = 1 AND OutStanding = 0 AND Billing IS NOT NULL AND Bayar IS NULL THEN 'Billing'
+                        WHEN RegistrationStatus = 1 AND OutStanding = 0 AND Billing IS NOT NULL AND Bayar IS NOT NULL THEN 'Bayar/Piutang'
+                    END AS Keterangan,
+                    Billing,
+                    Bayar,
+                    Excess,
+                    BolehPulang
                 FROM Dashboard_CTE
             ");
         });
