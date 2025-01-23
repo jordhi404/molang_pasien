@@ -189,7 +189,7 @@
                                         <?php list($date, $time) = explode(' ', $row->Billing); ?>
                                             <div><span><img src="{{ asset('/Logo_img/calendar.png') }}" alt="calendar" style="horizontal-align: middle; margin-right: 5px; height: 15px; width: 15px"> {{ $date }}</span></div>
                                             <div><span><img src="{{ asset('/Logo_img/clock.png') }}" alt="clock" style="horizontal-align: middle; margin-right: 5px; height: 15px; width: 15px"> {{ $time }}</span></div>
-                                            <div><span><img src="{{ asset('/Logo_img/stopwatch.png') }}" alt="stopwatch" style="horizontal-align: middle; margin-right: 5px; height: 15px; width: 15px">{{ $row->BillingDurationFormatted }}</span></div>
+                                            <div><span style="color: {{ $row->BillingColor }};"><img src="{{ asset('/Logo_img/stopwatch.png') }}" alt="stopwatch" style="horizontal-align: middle; margin-right: 5px; height: 15px; width: 15px">{{ $row->BillingDurationFormatted }}</span></div>
                                     @else
                                         <span> </span>
                                     @endif
