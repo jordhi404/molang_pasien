@@ -81,11 +81,11 @@ $(document).ready(function() {
                                 </div>
                                 <div class="card-body" id="selesaiCardBody">
                                     <img id="check-logo" src="Logo_img/accept.png" alt="Check" style="height: 20px; width: 20px; margin-left: 0;">
-                                    <p style="color: red"><strong>Administrasi Selesai.</strong></p>
+                                    <p class="blinking-text" style="color: red"><strong>Administrasi Selesai.</strong></p>
                                     ${patient.BolehPulang !==null ? `
                                         <img id="SIP-check-logo" src="Logo_img/accept.png" alt="Check" style="height: 20px; width: 20px; margin-left: 0;">    
-                                        <p style="color: red"><strong>Cetak SIP.</strong></p>
-                                    ` : ''}
+                                        <p class="blinking-text" style="color: red"><strong>Cetak SIP.</strong></p>
+                                    ` : `<p style="color: black"><strong>Cetak SIP.</strong></p>`}
                                 </div>
                             </div>
                         `;
@@ -99,8 +99,12 @@ $(document).ready(function() {
                                     <span class="customerBadge badge-${patient.CustomerType}">${customerTypeIcon}</span>
                                 </div>
                                 <div class="card-body" id="selesaiCardBody">
+                                ${patient.Billing !== null ? `
                                     <p><strong>Billing Ready:</strong> ${patient.Billing}<br></p>
                                     <p class="blinking-text"><strong>Tagihan pasien sudah siap.</strong></p>
+                                ` : `
+                                    <p><strong>Tagihan pasien dalam perhitungan.</strong></p>
+                                `}
                                 </div>
                             </div>
                         `;
