@@ -38,35 +38,130 @@ class ExportController extends Controller
                                 THEN CAST(cv.PlanDischargeDate AS VARCHAR) + ' ' + CAST(cv.PlanDischargeTime AS VARCHAR) 
                                 ELSE CAST(cv.PlanDischargeDate AS DATETIME) + CAST(cv.PlanDischargeTime AS TIME) 
                             END AS RencanaPulang"),
-                DB::raw("(SELECT FORMAT(MAX(ProposedDate), 'dd/MM/yyyy HH:mm')
-                            FROM PatientChargesHD
-                            WHERE VisitID=cv.VisitID 
-                                AND ProposedDate >= cv.PlanDischargeDate
-                                AND GCTransactionStatus<>'X121^999' 
-                                AND GCTransactionStatus NOT IN ('X121^001','X121^002','X121^003')
-                                AND HealthcareServiceUnitID IN (82,83,99,138,140)
-                                AND ProposedDate IS NOT NULL) AS Jangdik"),
-                DB::raw("(SELECT FORMAT(MAX(ProposedDate), 'dd/MM/yyyy HH:mm')
-                            FROM PatientChargesHD
-                            WHERE VisitID=cv.VisitID 
-                                AND GCTransactionStatus<>'X121^999'
-                                AND ProposedDate >= cv.PlanDischargeDate 
-                                AND GCTransactionStatus NOT IN ('X121^001','X121^002','X121^003')
-                                AND HealthcareServiceUnitID NOT IN (82,83,99,138,140,101,137)
-                                AND ProposedDate IS NOT NULL) AS Keperawatan"),
-                DB::raw("(SELECT FORMAT(MAX(ProposedDate), 'dd/MM/yyyy HH:mm')
-                            FROM PatientChargesHD
-                            WHERE VisitID=cv.VisitID 
-                                AND ProposedDate >= cv.PlanDischargeDate
-                                AND GCTransactionStatus<>'X121^999' 
-                                AND GCTransactionStatus NOT IN ('X121^001','X121^002','X121^003')
-                                AND HealthcareServiceUnitID IN (101,137)
-                                AND ProposedDate IS NOT NULL) AS Farmasi"),
-                DB::raw("(SELECT FORMAT(MAX(CreatedDate), 'dd/MM/yyyy HH:mm') 
-                            FROM PatientBill 
-                            WHERE RegistrationID = cv.RegistrationID 
-                                AND GCTransactionStatus <> 'X121^999' 
-                                AND CreatedDate IS NOT NULL) AS Billing"),
+                DB::raw("(CASE 
+                            WHEN 
+                                (SELECT MAX(ProposedDate)
+                                 FROM PatientChargesHD
+                                 WHERE VisitID=cv.VisitID 
+                                     AND ProposedDate >= cv.PlanDischargeDate
+                                     AND GCTransactionStatus<>'X121^999' 
+                                     AND GCTransactionStatus NOT IN ('X121^001','X121^002','X121^003')
+                                     AND HealthcareServiceUnitID IN (82,83,99,138,140)
+                                     AND ProposedDate IS NOT NULL) IS NOT NULL 
+                            THEN FORMAT(DATEADD(SECOND, DATEDIFF(SECOND, 
+                                CASE 
+                                    WHEN cv.PlanDischargeTime IS NULL 
+                                    THEN CAST(cv.PlanDischargeDate AS VARCHAR) + ' ' + CAST(cv.PlanDischargeTime AS VARCHAR) 
+                                    ELSE CAST(cv.PlanDischargeDate AS DATETIME) + CAST(cv.PlanDischargeTime AS TIME) 
+                                END, 
+                                (SELECT MAX(ProposedDate)
+                                 FROM PatientChargesHD
+                                 WHERE VisitID=cv.VisitID 
+                                     AND ProposedDate >= cv.PlanDischargeDate
+                                     AND GCTransactionStatus<>'X121^999' 
+                                     AND GCTransactionStatus NOT IN ('X121^001','X121^002','X121^003')
+                                     AND HealthcareServiceUnitID IN (82,83,99,138,140)
+                                     AND ProposedDate IS NOT NULL)), 0), 'HH:mm')
+                            ELSE NULL 
+                        END) AS Jangdik"),
+                DB::raw("(CASE
+                            WHEN
+                                (SELECT MAX(ProposedDate)
+                                FROM PatientChargesHD
+                                WHERE VisitID=cv.VisitID 
+                                    AND GCTransactionStatus<>'X121^999'
+                                    AND ProposedDate >= cv.PlanDischargeDate 
+                                    AND GCTransactionStatus NOT IN ('X121^001','X121^002','X121^003')
+                                    AND HealthcareServiceUnitID NOT IN (82,83,99,138,140,101,137)
+                                    AND ProposedDate IS NOT NULL) IS NOT NULL 
+                            THEN FORMAT(DATEADD(SECOND, DATEDIFF(SECOND,
+                                CASE 
+                                    WHEN cv.PlanDischargeTime IS NULL 
+                                    THEN CAST(cv.PlanDischargeDate AS VARCHAR) + ' ' + CAST(cv.PlanDischargeTime AS VARCHAR) 
+                                    ELSE CAST(cv.PlanDischargeDate AS DATETIME) + CAST(cv.PlanDischargeTime AS TIME) 
+                                END, 
+                                (SELECT MAX(ProposedDate)
+                                FROM PatientChargesHD
+                                WHERE VisitID=cv.VisitID 
+                                    AND GCTransactionStatus<>'X121^999'
+                                    AND ProposedDate >= cv.PlanDischargeDate 
+                                    AND GCTransactionStatus NOT IN ('X121^001','X121^002','X121^003')
+                                    AND HealthcareServiceUnitID NOT IN (82,83,99,138,140,101,137)
+                                    AND ProposedDate IS NOT NULL)), 0), 'HH:mm')
+                                ELSE NULL
+                        END) AS Keperawatan"),
+                DB::raw("(CASE
+                            WHEN
+                                (SELECT MAX(ProposedDate)
+                                FROM PatientChargesHD
+                                WHERE VisitID=cv.VisitID 
+                                    AND ProposedDate >= cv.PlanDischargeDate
+                                    AND GCTransactionStatus<>'X121^999' 
+                                    AND GCTransactionStatus NOT IN ('X121^001','X121^002','X121^003')
+                                    AND HealthcareServiceUnitID IN (101,137)
+                                    AND ProposedDate IS NOT NULL) IS NOT NULL
+                            THEN FORMAT(DATEADD(SECOND, DATEDIFF(SECOND,
+                                CASE 
+                                    WHEN cv.PlanDischargeTime IS NULL 
+                                    THEN CAST(cv.PlanDischargeDate AS VARCHAR) + ' ' + CAST(cv.PlanDischargeTime AS VARCHAR) 
+                                    ELSE CAST(cv.PlanDischargeDate AS DATETIME) + CAST(cv.PlanDischargeTime AS TIME) 
+                                END,
+                                (SELECT MAX(ProposedDate)
+                                FROM PatientChargesHD
+                                WHERE VisitID=cv.VisitID 
+                                    AND ProposedDate >= cv.PlanDischargeDate
+                                    AND GCTransactionStatus<>'X121^999' 
+                                    AND GCTransactionStatus NOT IN ('X121^001','X121^002','X121^003')
+                                    AND HealthcareServiceUnitID IN (101,137)
+                                    AND ProposedDate IS NOT NULL)), 0), 'HH:mm')
+                                ELSE NULL
+                        END) AS Farmasi"),
+                DB::raw("(CASE 
+                            WHEN
+                                (SELECT MAX(ProposedDate)
+                                    FROM PatientChargesHD
+                                    WHERE VisitID=cv.VisitID 
+                                        AND GCTransactionStatus<>'X121^999'
+                                        AND ProposedDate >= cv.PlanDischargeDate 
+                                        AND GCTransactionStatus NOT IN ('X121^001','X121^002','X121^003')
+                                        AND HealthcareServiceUnitID NOT IN (82,83,99,138,140,101,137)
+                                        AND ProposedDate IS NOT NULL) IS NOT NULL
+                            THEN FORMAT(DATEADD(SECOND, DATEDIFF(SECOND,
+                                (SELECT MAX(ProposedDate)
+                                    FROM PatientChargesHD
+                                    WHERE VisitID=cv.VisitID 
+                                        AND GCTransactionStatus<>'X121^999'
+                                        AND ProposedDate >= cv.PlanDischargeDate 
+                                        AND GCTransactionStatus NOT IN ('X121^001','X121^002','X121^003')
+                                        AND HealthcareServiceUnitID NOT IN (82,83,99,138,140,101,137)
+                                        AND ProposedDate IS NOT NULL),
+                                (SELECT MAX(CreatedDate) 
+                                FROM PatientBill 
+                                WHERE RegistrationID = cv.RegistrationID 
+                                    AND GCTransactionStatus <> 'X121^999' 
+                                    AND CreatedDate IS NOT NULL)), 0), 'HH:mm')
+                            WHEN
+                                (SELECT MAX(ProposedDate)
+                                    FROM PatientChargesHD
+                                    WHERE VisitID=cv.VisitID 
+                                        AND GCTransactionStatus<>'X121^999'
+                                        AND ProposedDate >= cv.PlanDischargeDate 
+                                        AND GCTransactionStatus NOT IN ('X121^001','X121^002','X121^003')
+                                        AND HealthcareServiceUnitID NOT IN (82,83,99,138,140,101,137)
+                                        AND ProposedDate IS NOT NULL) IS NULL
+                            THEN FORMAT(DATEADD(SECOND, DATEDIFF(SECOND,
+                                CASE 
+                                    WHEN cv.PlanDischargeTime IS NULL 
+                                    THEN CAST(cv.PlanDischargeDate AS VARCHAR) + ' ' + CAST(cv.PlanDischargeTime AS VARCHAR) 
+                                    ELSE CAST(cv.PlanDischargeDate AS DATETIME) + CAST(cv.PlanDischargeTime AS TIME) 
+                                END,
+                                (SELECT MAX(CreatedDate) 
+                                FROM PatientBill 
+                                WHERE RegistrationID = cv.RegistrationID 
+                                    AND GCTransactionStatus <> 'X121^999' 
+                                    AND CreatedDate IS NOT NULL)), 0), 'HH:mm')
+                            ELSE NULL
+                        END) AS Billing"),
                 DB::raw("(SELECT FORMAT(MAX(CreatedDate), 'dd/MM/yyyy HH:mm') 
                             FROM PatientPaymentHd 
                             WHERE RegistrationID = cv.RegistrationID 
@@ -78,10 +173,41 @@ class ExportController extends Controller
                                 AND GCTransactionStatus <> 'X121^999' 
                                 AND PaymentDate IS NOT NULL 
                                 ORDER BY PaymentID DESC) AS Excess"),
-                DB::raw("(SELECT FORMAT(MAX(PrintedDate), 'dd/MM/yyyy HH:mm') 
-                            FROM ReportPrintLog 
-                            WHERE ReportID = 7012 
-                                AND ReportParameter = CONCAT('RegistrationID = ', r.RegistrationID)) AS BolehPulang"),
+                DB::raw("(CASE
+                            WHEN
+                                (SELECT MAX(CreatedDate) 
+                                FROM PatientBill 
+                                WHERE RegistrationID = cv.RegistrationID 
+                                    AND GCTransactionStatus <> 'X121^999' 
+                                    AND CreatedDate IS NOT NULL) IS NOT NULL
+                            THEN FORMAT(DATEADD(SECOND, DATEDIFF(SECOND,
+                                (SELECT MAX(CreatedDate) 
+                                FROM PatientBill 
+                                WHERE RegistrationID = cv.RegistrationID 
+                                    AND GCTransactionStatus <> 'X121^999' 
+                                    AND CreatedDate IS NOT NULL),
+                                (SELECT MAX(PrintedDate) 
+                                FROM ReportPrintLog 
+                                WHERE ReportID = 7012 
+                                    AND ReportParameter = CONCAT('RegistrationID = ', r.RegistrationID))), 0), 'HH:mm')
+                            WHEN
+                                (SELECT MAX(CreatedDate) 
+                                FROM PatientBill 
+                                WHERE RegistrationID = cv.RegistrationID 
+                                    AND GCTransactionStatus <> 'X121^999' 
+                                    AND CreatedDate IS NOT NULL) IS NULL
+                            THEN FORMAT(DATEADD(SECOND, DATEDIFF(SECOND,
+                                CASE 
+                                    WHEN cv.PlanDischargeTime IS NULL 
+                                    THEN CAST(cv.PlanDischargeDate AS VARCHAR) + ' ' + CAST(cv.PlanDischargeTime AS VARCHAR) 
+                                    ELSE CAST(cv.PlanDischargeDate AS DATETIME) + CAST(cv.PlanDischargeTime AS TIME) 
+                                END,
+                                (SELECT MAX(PrintedDate) 
+                                FROM ReportPrintLog 
+                                WHERE ReportID = 7012 
+                                    AND ReportParameter = CONCAT('RegistrationID = ', r.RegistrationID))), 0), 'HH:mm')
+                                ELSE NULL
+                        END) AS BolehPulang"),
                 DB::raw("CAST(cv.DischargeDate AS DATETIME) + CAST(cv.DischargeTime AS TIME) AS DischargeDateTime"),
                 DB::raw("FORMAT(cv.RoomDischargeDateTime, 'dd/MM/yyyy HH:mm') AS RoomDischargeDateTime"),
                 DB::raw("CONCAT(DATEDIFF(SECOND, 
@@ -127,12 +253,12 @@ class ExportController extends Controller
         $sheet->setCellValue('D1', 'VISIT TERAKHIR');
         $sheet->setCellValue('E1', 'NAMA DOKTER');
         $sheet->setCellValue('F1', 'RENCANA PULANG');
-        $sheet->setCellValue('G1', 'JANGDIK');
-        $sheet->setCellValue('H1', 'KEPERAWATAN');
-        $sheet->setCellValue('I1', 'FARMASI');
-        $sheet->setCellValue('J1', 'BILLING');
+        $sheet->setCellValue('G1', 'DURASI JANGDIK (hh::mm)');
+        $sheet->setCellValue('H1', 'DURASI KEPERAWATAN (hh::mm)');
+        $sheet->setCellValue('I1', 'DURASI FARMASI (hh::mm)');
+        $sheet->setCellValue('J1', 'DURASI BILLING (hh::mm)');
         $sheet->setCellValue('K1', 'BAYAR');
-        $sheet->setCellValue('L1', 'BOLEH PULANG');
+        $sheet->setCellValue('L1', 'WAKTU SAMPAI CETAK SIP (hh::mm)');
         $sheet->setCellValue('M1', 'PASIEN PULANG');
         $sheet->setCellValue('N1', 'RENCANA PULANG - PASIEN PULANG (hh:mm)');
 

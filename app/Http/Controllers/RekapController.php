@@ -7,6 +7,7 @@ use Illuminate\Support\Facades\DB;
 use Illuminate\Support\Facades\Log;
 use carbon\carbon;
 use App\Models\ip_mappings;
+use Illuminate\Support\Carbon as SupportCarbon;
 
 class RekapController extends Controller
 {
@@ -196,10 +197,15 @@ class RekapController extends Controller
             }
 
             //Menghitung durasi Billing
-            if ($patient->Billing && $patient->Keperawatan) {
+            if ($patient->Billing) {
                 $billingTime = Carbon::createFromFormat('d/m/Y H:i', $patient->Billing);
-                $keperawatanTime = Carbon::createFromFormat('d/m/Y H:i', $patient->Keperawatan);
-                $billingDuration = max(0, $keperawatanTime->diffInMinutes($billingTime)); // durasi dalam menit
+                if(!$patient->Keperawatan) {
+                    $rpl = Carbon::parse($patient->RencanaPulang);
+                    $billingDuration = max(0, $rpl->diffInMinutes($billingTime));
+                } else {
+                    $keperawatanTime = Carbon::createFromFormat('d/m/Y H:i', $patient->Keperawatan);
+                    $billingDuration = max(0, $keperawatanTime->diffInMinutes($billingTime));
+                }
                 if ($billingDuration !== null) {
                     $hours = floor($billingDuration / 60); // Jam
                     $minutes = $billingDuration % 60; // Menit
@@ -212,10 +218,15 @@ class RekapController extends Controller
             }
             
             //Menghitung durasi cetak SIP
-            if ($patient->BolehPulang && $patient->Bayar) {
+            if ($patient->BolehPulang) {
                 $cetakTime = Carbon::createFromFormat('d/m/Y H:i', $patient->BolehPulang);
-                $billingTime = Carbon::createFromFormat('d/m/Y H:i', $patient->Billing);
-                $cetakDuration = max(0, $billingTime->diffInMinutes($cetakTime)); // durasi dalam menit
+                if($patient->Billing){
+                    $billingTime = Carbon::createFromFormat('d/m/Y H:i', $patient->Billing);
+                    $cetakDuration = max(0, $billingTime->diffInMinutes($cetakTime)); // durasi dalam menit
+                } else {
+                    $rpl = Carbon::parse($patient->RencanaPulang);
+                    $cetakDuration = max(0, $rpl->diffInMinutes($cetakTime)); // durasi dalam menit
+                }
                 if ($cetakDuration !== null) {
                     $hours = floor($cetakDuration / 60); // Jam
                     $minutes = $cetakDuration % 60; // Menit
@@ -223,6 +234,8 @@ class RekapController extends Controller
                 } else {
                     $patient->cetakDurationFormatted = null;
                 }
+            } else {
+                $patient->cetakDurationFormatted = 'Data bayar tidak ada';
             }
         }
 
