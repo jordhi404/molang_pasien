@@ -49,7 +49,7 @@ class RanapController extends Controller
             $dischargeTime = Carbon::parse($patient-> RencanaPulang);
             $customerTypeIcons = $customerTypeIcon[$patient->CustomerType] ?? null;
 
-            $patient -> customerTypeIcons = $customerTypeIcons;
+            $patient -> customerTypeIcons = '/molang_pasien' . $customerTypeIcons;
 
             // Mapping status ke kolom tabel.
             $column = $this-> mapStatusToColumn($status);
