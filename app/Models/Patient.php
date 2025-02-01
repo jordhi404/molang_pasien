@@ -35,42 +35,9 @@ class Patient extends Model
                         a.BedCode,
                         a.MedicalNo,
                         a.PatientName,
-                        r.CustomerType,
-                        r.ChargeClassName,
-                        RencanaPulang = 
-                            CASE 
-                                WHEN cv.PlanDischargeTime IS NULL
-                                    THEN CAST(cv.PlanDischargeDate AS VARCHAR) + ' ' + CAST(cv.PlanDischargeTime AS VARCHAR)
-                                ELSE CAST(cv.PlanDischargeDate AS VARCHAR) + ' ' + CAST(cv.PlanDischargeTime AS VARCHAR)
-                            END,
-                        CatRencanaPulang = cv.PlanDischargeNotes,
-                        JangdikEndTime = 
-                            (SELECT FORMAT(MAX(ProposedDate), 'dd/MM/yyyy HH:mm')
-                                FROM PatientChargesHD
-                                WHERE VisitID=cv.VisitID 
-                                    AND ProposedDate >= cv.PlanDischargeDate
-                                    AND GCTransactionStatus<>'X121^999' 
-                                    AND GCTransactionStatus NOT IN ('X121^001','X121^002','X121^003')
-                                    AND HealthcareServiceUnitID IN (82,83,99,138,140)
-                                    AND ProposedDate IS NOT NULL),
-                        KeperawatanEndTime = 
-                            (SELECT FORMAT(MAX(ProposedDate), 'dd/MM/yyyy HH:mm')
-                                FROM PatientChargesHD
-                                WHERE VisitID=cv.VisitID 
-                                    AND GCTransactionStatus<>'X121^999'
-                                    AND ProposedDate >= cv.PlanDischargeDate 
-                                    AND GCTransactionStatus NOT IN ('X121^001','X121^002','X121^003')
-                                    AND HealthcareServiceUnitID NOT IN (82,83,99,138,140,101,137)
-                                    AND ProposedDate IS NOT NULL),
-                        FarmasiEndTime = 
-                            (SELECT FORMAT(MAX(ProposedDate), 'dd/MM/yyyy HH:mm')
-                                FROM PatientChargesHD
-                                WHERE VisitID=cv.VisitID 
-                                    AND ProposedDate >= cv.PlanDischargeDate
-                                    AND GCTransactionStatus<>'X121^999' 
-                                    AND GCTransactionStatus NOT IN ('X121^001','X121^002','X121^003')
-                                    AND HealthcareServiceUnitID IN (101,137)
-                                    AND ProposedDate IS NOT NULL),
+                        r.CustomerType,    
+                        RencanaPulang = CAST(cv.PlanDischargeDate AS VARCHAR) + ' ' + CAST(cv.PlanDischargeTime AS VARCHAR),
+                        CatRencanaPulang = cv.PlanDischargeNotes,                      
                         TungguJangdik = 
                             (SELECT TOP 1 TransactionNo 
                             FROM PatientChargesHD
@@ -101,37 +68,25 @@ class Patient extends Model
                             WHERE RegistrationID = a.RegistrationID 
                             ORDER BY ID DESC),
                         OutStanding =
-                            (SELECT DISTINCT COUNT(GCTransactionStatus) 
+                            (SELECT COUNT(DISTINCT GCTransactionStatus) 
                             FROM PatientChargesHD 
                             WHERE VisitID=cv.VisitID 
                             AND GCTransactionStatus IN ('X121^001','X121^002','X121^003')),
-                        Keterangan =
-                        CASE 
-                            WHEN sc.StandardCodeName = '' OR sc.StandardCodeName IS NULL
-                                THEN ''
-                            ELSE sc.StandardCodeName
-                        END,
+                --        Keterangan = sc.StandardCodeName,
                         Billing =
-                            (SELECT FORMAT(MAX(CreatedDate), 'dd/MM/yyyy HH:mm') 
+                            (SELECT MAX(CreatedDate) 
                                 FROM PatientBill 
                                 WHERE RegistrationID = cv.RegistrationID 
                                     AND GCTransactionStatus <> 'X121^999' 
                                     AND CreatedDate IS NOT NULL),
                         Bayar =
-                            (SELECT FORMAT(MAX(CreatedDate), 'dd/MM/yyyy HH:mm') 
+                            (SELECT MAX(CreatedDate) 
                                 FROM PatientPaymentHd 
                                 WHERE RegistrationID = cv.RegistrationID 
                                     AND GCTransactionStatus <> 'X121^999' 
                                     AND CreatedDate IS NOT NULL),
-                        Excess = 
-                            (SELECT TOP 1 TotalPatientBillAmount 
-                                FROM PatientPaymentHd 
-                                WHERE RegistrationID = cv.RegistrationID 
-                                    AND GCTransactionStatus <> 'X121^999' 
-                                    AND PaymentDate IS NOT NULL 
-                                    ORDER BY PaymentID DESC),
                         BolehPulang = 
-                            (SELECT FORMAT(MAX(PrintedDate), 'dd/MM/yyyy HH:mm') 
+                            (SELECT MAX(PrintedDate) 
                                 FROM ReportPrintLog 
                                 WHERE ReportID = 7012 
                                     AND ReportParameter = CONCAT('RegistrationID = ', r.RegistrationID))
@@ -146,21 +101,16 @@ class Patient extends Model
                     WHERE a.IsDeleted = 0 
                     AND a.RegistrationID IS NOT NULL
                     AND cv.PlanDischargeDate IS NOT NULL
-                    AND r.GCRegistrationStatus <> 'X020^006' -- Pendaftaran Tidak DiBatalkan
+                    AND r.GCRegistrationStatus <> 'X020^006'
                 )
                 SELECT 
-                    RegistrationNo,
                     ServiceUnitName,
                     BedCode,
                     MedicalNo,
                     PatientName,
                     CustomerType,
-                    ChargeClassName,
                     RencanaPulang,
                     CatRencanaPulang,
-                    JangdikEndTime,
-                    KeperawatanEndTime,
-                    FarmasiEndTime,
                     Keperawatan,
                     TungguJangdik,
                     TungguFarmasi,
@@ -176,7 +126,6 @@ class Patient extends Model
                     END AS Keterangan,
                     Billing,
                     Bayar,
-                    Excess,
                     BolehPulang
                 FROM Dashboard_CTE
             ");

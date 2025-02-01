@@ -48,7 +48,9 @@ class RanapController extends Controller
             $status = $patient->Keterangan;
             $dischargeTime = Carbon::parse($patient-> RencanaPulang);
             $customerTypeIcons = $customerTypeIcon[$patient->CustomerType] ?? null;
+            $billingDate = Carbon::parse($patient->Billing)->format('d/m/Y H:i');
 
+            $patient -> billingDate = $billingDate;
             $patient -> customerTypeIcons = $customerTypeIcons;
 
             // Mapping status ke kolom tabel.
@@ -61,7 +63,6 @@ class RanapController extends Controller
                     'PatientName' => $patient->PatientName,
                     'ServiceUnitName' => $patient->ServiceUnitName,
                     'CustomerType' => $patient->CustomerType,
-                    'ChargeClassName' => $patient->ChargeClassName,
                     'RencanaPulang' => $patient->RencanaPulang,
                 ]
             );
@@ -118,7 +119,7 @@ class RanapController extends Controller
             $BedStatus = $bed->BedStatus;
 
             $bedCleaningRecord = bed_cleaning_record::firstOrCreate(
-                ['BedCode' => $bed->BedCode], // Kunci unik
+                ['BedCode' => $BedCode], // Kunci unik
                 [
                     'ServiceUnitName' => $bed->ServiceUnitName,
                     'LastUnoccupiedDate' => $bed->LastUnoccupiedDate,
@@ -151,7 +152,7 @@ class RanapController extends Controller
                             ->value('standard_time');
             $bed->bed_standard_time = $bedStandardTime;
 
-            Log::info('Bed status bed ' . $BedCode . ': ' . $BedStatus);
+            // Log::info('Bed status bed ' . $BedCode . ': ' . $BedStatus);
         }
 
 
