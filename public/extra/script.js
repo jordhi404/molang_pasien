@@ -99,8 +99,8 @@ $(document).ready(function() {
                                     <span class="customerBadge badge-${patient.CustomerType}">${customerTypeIcon}</span>
                                 </div>
                                 <div class="card-body" id="selesaiCardBody">
-                                ${patient.Billing !== null ? `
-                                    <p><strong>Billing Ready:</strong> ${patient.Billing}<br></p>
+                                ${patient.billingDate !== null ? `
+                                    <p><strong>Billing Ready:</strong> ${patient.billingDate}<br></p>
                                     <p class="blinking-text"><strong>Tagihan pasien sudah siap.</strong></p>
                                 ` : `
                                     <p><strong>Tagihan pasien dalam perhitungan.</strong></p>
@@ -197,7 +197,7 @@ $(document).ready(function() {
 
                     if (waitTimeElement && progressBar) {
                         // Cek jika status pasien bukan 'Bayar/Piutang'
-                        if (patient.status !== 'Bayar/Pitang') {
+                        if (patient.status !== 'Bayar/Piutang') {
                             var startTime = new Date(patient.start_time).getTime();
                             var currentTime = new Date().getTime();
                             var waitTimeInSeconds = Math.floor((currentTime - startTime) / 1000);
