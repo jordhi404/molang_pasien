@@ -6,7 +6,7 @@ $(document).ready(function() {
 
     function updatePatientCard() {
         $.ajax({
-            url: '/ajax/patients',
+            url: '/molang_pasien/ajax/patients',
             method: 'GET',
             timeout: 20000, // Timeout setelah load 20 detik.
             beforeSend: function() {
@@ -163,11 +163,12 @@ $(document).ready(function() {
                 // Sembunyikan indikator loading.
                 $('#loading-indicator').hide();
             },
-            error: function(jqHXR, textStatus) {
+            error: function(jqHXR, textStatus, errorThrown) {
                 if (textStatus === 'timeout') {
                     console.warn('Koneksi timeout. mencoba menghubungkan ulang...');
                 } else {
-                    console.warn('Terjadi error: ', textStatus);
+                    console.warn('Terjadi error: ', textStatus, errorThrown);
+                    console.warn('Response: ', jqXHR.responseText);
                 }
 
                 // Percobaan koneksi ulang.
