@@ -16,11 +16,23 @@ use Illuminate\Support\Facades\DB;
 class RanapController extends Controller
 {
     public function getPatientDataAjax(Request $request) {
-        $patients = collect(Patient::getPatientData());
+        $data = DB::connection('pgsql')->table('temp_data_ajax')->first();
         $beds = collect(Bed::getBedToClean());
         $ipAddress = $request->ip();
         $unit = ip_mappings::on('pgsql')->where('ip_address', $ipAddress)->value('unit');
         $serviceUnit = $this->getServiceUnit($unit);
+
+        // Cek apakah data sudah expired.
+        if (!$data || $this->isDataExpired($data)) {
+            // Data expired, hapus data lama lalu ambil data baru.
+            DB::connection('pgsql')->table('temp_data_ajax')->truncate();
+            Patient::getPatientData();
+            $data = DB::connection('pgsql')->table('temp_data_ajax')->get();
+        } else {
+            // Data tidak expired, ambil data yang sudah ada.
+            $data = DB::connection('pgsql')->table('temp_data_ajax')->get();
+        }
+        $patients = collect($data);
 
         /* MENGAMBIL DATA PASIEN UNTUK DITAMPILKAN. */
         if ($unit !== 'TEKNOLOGI INFORMASI') {
@@ -159,12 +171,23 @@ class RanapController extends Controller
             // Log::info('Bed status bed ' . $BedCode . ': ' . $BedStatus);
         }
 
-
         return response()->json([
             'patients' => $patients->values()->toArray(),
             'beds' => $beds->values()->toArray(),
             'customerTypeColors' => $customerTypeColors->toArray(),
         ]);
+    }
+
+    // Fungsi untuk menentukan data di temp_data_ajax expired atau tidak.
+    private function isDataExpired($data) {
+        $expirationTime = 100;
+        $updateAt = Carbon::parse($data->updated_at);
+        $expired = $updateAt->diffInSeconds(now());
+
+        Log::info("Cek Expired: " . $expired . " detik.");
+        Log::info("UpdateAt: " . $updateAt);
+        
+        return $expired > $expirationTime;
     }
 
     /* FUNCTION UNTUK MENAMPILKAN DATA DI DASHBOARD RANAP. */
@@ -183,6 +206,7 @@ class RanapController extends Controller
         return DB::table('service_units')->where('unit_code', $unit)->value('unit_service_name');
     }
     
+    // Mengambil mapping status pasien.
     protected function mapStatusToColumn($status) {
         return DB::table('status_mappings')->where('keterangan', $status)->value('status_value');
     }    
