@@ -129,29 +129,45 @@ class Patient extends Model
         ");
 
         $data_batch = [];
+        $valid_time = now()->subMinutes(1);
 
-        // SImpan ke tabel temp_data_ajax di pgsql.
+        // Simpan ke tabel temp_data_ajax di pgsql.
         foreach ($patients_data as $data) {
-            $data_batch[] = [
-                'ServiceUnitName' => $data->ServiceUnitName,
-                'BedCode' => $data->BedCode,
-                'MedicalNo' => $data->MedicalNo,
-                'PatientName' => $data->PatientName,
-                'CustomerType' => $data->CustomerType,
-                'RencanaPulang' => $data->RencanaPulang,
-                'CatRencanaPulang' => $data->CatRencanaPulang,
-                'Keperawatan' => $data->Keperawatan,
-                'TungguJangdik' => $data->TungguJangdik,
-                'TungguFarmasi' => $data->TungguFarmasi,
-                'Keterangan' => $data->Keterangan,
-                'Billing' => $data->Billing,
-                'Bayar' => $data->Bayar,
-                'BolehPulang' => $data->BolehPulang,
-                'created_at' => now(),
-                'updated_at' => now(),
-            ];
+            // Cek apakah ada data BedCode & MedicalNo yg msh valid.
+            $exists = DB::connection('pgsql')->table('temp_data_ajax')
+                    ->whereExists(function ($query) use ($data, $valid_time) {
+                        $query->select(DB::raw(1))
+                            ->from('temp_data_ajax')
+                            ->where('ServiceUnitName', $data->ServiceUnitName)
+                            ->where('MedicalNo', $data->MedicalNo)
+                            ->where('BedCode', $data->BedCode)
+                            ->where('updated_at', '>=', $valid_time); // Cek apakah masih valid.
+                    })->exists();
+
+            if(!$exists) {
+                $data_batch[] = [
+                    'ServiceUnitName' => $data->ServiceUnitName,
+                    'BedCode' => $data->BedCode,
+                    'MedicalNo' => $data->MedicalNo,
+                    'PatientName' => $data->PatientName,
+                    'CustomerType' => $data->CustomerType,
+                    'RencanaPulang' => $data->RencanaPulang,
+                    'CatRencanaPulang' => $data->CatRencanaPulang,
+                    'Keperawatan' => $data->Keperawatan,
+                    'TungguJangdik' => $data->TungguJangdik,
+                    'TungguFarmasi' => $data->TungguFarmasi,
+                    'Keterangan' => $data->Keterangan,
+                    'Billing' => $data->Billing,
+                    'Bayar' => $data->Bayar,
+                    'BolehPulang' => $data->BolehPulang,
+                    'created_at' => now(),
+                    'updated_at' => now(),
+                ];
+            }
         }
 
-        DB::connection('pgsql')->table('temp_data_ajax')->insert($data_batch);
+        if(!empty($data_batch)) {
+            DB::connection('pgsql')->table('temp_data_ajax')->insert($data_batch);
+        }
     }
 }
