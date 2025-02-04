@@ -23,7 +23,7 @@ return new class extends Migration
             $table->string('Keperawatan')->nullable();
             $table->string('TungguJangdik')->nullable();
             $table->string('TungguFarmasi')->nullable();
-            $table->string('Keterangan');
+            $table->string('Keterangan')->nullable();
             $table->datetime('Billing')->nullable();
             $table->datetime('Bayar')->nullable();
             $table->datetime('BolehPulang')->nullable();
