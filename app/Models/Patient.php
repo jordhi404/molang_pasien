@@ -160,11 +160,11 @@ class Patient extends Model
             ");
 
             $data_batch = [];
-            $valid_time = now()->subSeconds(100);
+            $valid_time = now()->subSeconds(100); // Usia data 100 detik.
 
             // Simpan ke tabel temp_data_ajax di pgsql.
             foreach ($patients_data as $data) {
-                // Cek apakah ada data BedCode & MedicalNo yg msh valid.
+                // Untuk mencegah duplikasi data.
                 $exists = DB::connection('pgsql')->table('temp_data_ajax')
                         ->whereExists(function ($query) use ($data, $valid_time) {
                             $query->select(DB::raw(1))
