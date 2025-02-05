@@ -177,7 +177,17 @@ $(document).ready(function() {
                     setTimeout(updatePatientCard, 2000);
                 } else {
                     // Jika sudah gagal 3 kali percobaan.
-                    $('#update-info').text('GAGAL MENGHUBUNGKAN ULANG, SILAHKAN REFRESH HALAMAN SECARA MANUAL.');
+                    $('#update-info').text('GAGAL TERHUBUNG, MOHON REFRESH HALAMAN.');
+                    Swal.fire({
+                        icon: 'error',
+                        title: 'Gagal Menghubungkan Ulang!',
+                        text: 'Silahkan refresh halaman secara manual.',
+                        confirmButtonText: 'Refresh'
+                    }).then((result) => {
+                        if (result.isConfirmed) {
+                            location.reload(); // Reload halaman saat tombol ditekan.
+                        }
+                    });
                 }
             }
         });
