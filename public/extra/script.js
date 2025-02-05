@@ -185,7 +185,10 @@ $(document).ready(function() {
                         confirmButtonText: 'Refresh'
                     }).then((result) => {
                         if (result.isConfirmed) {
-                            location.reload(); // Reload halaman saat tombol ditekan.
+                            $('#loading-indicator').show();
+                            setTimeout(() => {
+                                location.reload(); // Reload halaman saat tombol ditekan.
+                            }, 1000);
                         }
                     });
                 }
