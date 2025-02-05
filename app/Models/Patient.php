@@ -25,9 +25,19 @@ class Patient extends Model
     /* CONNECTION KE DATABASE SQLSRV UNTUK MENGAMBIL DATA PASIEN. */
     public static function getPatientData()
     {
+        $max = now()->subMinutes(2);
+
+        // Hapus lock lama jika ada (karena crash atau error)
+        DB::connection('pgsql')->table('process_lock')
+            ->where('process_name', 'data_update')
+            ->where('locked_at', '<=', $max)
+            ->delete();
+
         $lockExists = DB::connection('pgsql')->table('process_lock')
             ->where('process_name', 'data_update')
+            ->where('locked_at', '>', $max)
             ->exists();
+
         if ($lockExists) {
             // Jika ada yang melakukan proses, hentikan eksekusi
             Log::info('Proses data update sedang berlangsung....');
@@ -150,7 +160,7 @@ class Patient extends Model
             ");
 
             $data_batch = [];
-            $valid_time = now()->subMinutes(1);
+            $valid_time = now()->subSeconds(100);
 
             // Simpan ke tabel temp_data_ajax di pgsql.
             foreach ($patients_data as $data) {
