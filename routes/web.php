@@ -5,12 +5,16 @@ use App\Http\Controllers\RanapController;
 use App\Http\Controllers\RekapController;
 use App\Http\Controllers\ExportController;
 use App\Http\Middleware\checkIpMapping;
+use App\Models\Patient;
 
 // Route dashboard ranap.
 Route::get('/', [RanapController::class, 'showDashboardRanap'])->name('ranap');
 
 // Route untuk api data.
 Route::get('/ajax/patients', [RanapController::class, 'getPatientDataAjax'])->name('ajax.patients');
+
+// Route untuk api process_lock.
+Route::get('/ajax/process', [Patient::class, 'getPatientData'])->name('ajax.process');
 
 // Middleware untuk dashboard rekap data.
 Route::middleware([checkIpMapping::class])
