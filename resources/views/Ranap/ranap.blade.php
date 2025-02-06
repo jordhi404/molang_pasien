@@ -94,62 +94,36 @@
     <script src="https://cdn.jsdelivr.net/npm/@popperjs/core@2.11.8/dist/umd/popper.min.js"></script>
     <script src="https://cdn.jsdelivr.net/npm/sweetalert2@11"></script>
     <script src="bootstrap-5.3.3-dist/js/bootstrap.bundle.min.js"></script>
-    <script src="https://js.pusher.com/7.0/pusher.min.js"></script>
 
     <script src="{{ asset('extra/script.js') }}"></script>
 
     <script>
-        // Konfigurasi Pusher
-        Pusher.logToConsole = true;
-        var pusher = new Pusher('base64:TlAZweLNiE36FZiSZNy66R7oZbyVnnpeM1I4gc3QGRw=', {
-            cluster: 'ap1',
-            forceTLS: true
-        });
-
-        // Subscribe ke channel 'data-update'
-        var channel = pusher.subscribe('data-update');
-
-        // Fungsi untuk mengambil data terbaru
-        function fetchData() {
-            $.ajax({
-                url: "/ajax/process",  
-                type: "GET",
-                success: function(response) {
-                    if (response.status === "locked") {
-                        Swal.fire({
-                            icon: 'info',
-                            title: 'Informasi',
-                            text: response.message,
-                            showConfirmButton: false
-                        });
-                    }
-                },
-                error: function() {
+        $.ajax({
+            url: "/ajax/process",  // Sesuaikan dengan route API-mu
+            type: "GET",
+            success: function(response) {
+                if (response.status === "locked") {
                     Swal.fire({
-                        icon: 'error',
-                        title: 'Error',
-                        text: 'Gagal mengupdate data. Silahkan refresh manual setelah beberapa saat.',
+                        icon: 'info',
+                        title: 'Informasi',
+                        text: response.message,
                         timer: 10000,
                         showConfirmButton: false
                     });
+                } else {
+                    // Render data ke halaman jika tidak terkunci
+                    renderPatientData(response.patients);
                 }
-            });
-        }
-
-        // Langsung jalankan AJAX pertama kali saat halaman dibuka
-        fetchData();
-
-        // Event dari Pusher diterima → Coba ambil data lagi setelah delay acak
-        channel.bind('data_updated', function(data) {
-            console.log('Data update diterima dari Pusher: ', data.message);
-
-            // Random delay supaya tidak semua dashboard mengambil data bersamaan
-            const randomDelay = Math.floor(Math.random() * (3000 - 1000 + 1)) + 1000;
-
-            setTimeout(function() {
-                console.log('Menjalankan fetchData setelah delay: ', randomDelay);
-                fetchData(); // Ambil data terbaru setelah delay
-            }, randomDelay);
+            },
+            error: function() {
+                Swal.fire({
+                    icon: 'error',
+                    title: 'Error',
+                    text: 'Terjadi kesalahan saat mengambil data.',
+                    timer: 10000,
+                    showConfirmButton: false
+                });
+            }
         });
     </script>
 </body>
