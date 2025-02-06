@@ -8,6 +8,7 @@ use Illuminate\Database\Eloquent\Model;
 use Illuminate\Support\Facades\Cache;
 use Illuminate\Support\Facades\Log;
 use Illuminate\Support\Facades\DB;
+use App\Events\DataUpdate;
 
 class Patient extends Model
 {
@@ -43,7 +44,7 @@ class Patient extends Model
             Log::info('Proses data update sedang berlangsung....');
             return response()->json([
                 'status' => 'locked',
-                'message' => 'Proses data update sedang berlangsung. Silakan refresh setelah 5-10 detik.'
+                'message' => 'Proses data update sedang berlangsung. Silakan tunggu beberapa saat, dashboard akan diupdate secara otomatis.'
             ]);
         }
 
@@ -206,6 +207,9 @@ class Patient extends Model
 
             // Commit transaksi.
             DB::connection('pgsql')->commit();
+
+            // Setelah selesai menyimpan ke temp_data_ajax, kirim event broadcast.
+            event(new DataUpdate("Data terbaru bisa diambil."));
         } catch (Exception $e) {
             // Rollback transaksi jika ada error.
             DB::connection('pgsql')->rollBack();

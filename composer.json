@@ -9,7 +9,8 @@
         "laravel/framework": "^11.9",
         "laravel/tinker": "^2.9",
         "mpdf/mpdf": "^6.1",
-        "phpoffice/phpspreadsheet": "^3.8"
+        "phpoffice/phpspreadsheet": "^3.8",
+        "pusher/pusher-php-server": "^7.2"
     },
     "require-dev": {
         "barryvdh/laravel-debugbar": "^3.14",
