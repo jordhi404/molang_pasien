@@ -108,34 +108,6 @@
 
         // Subscribe channel 'data_update'.
         var channel = pusher.subscribe('data-update');
-
-        $.ajax({
-            url: "/ajax/process",  // Sesuaikan dengan route API-mu
-            type: "GET",
-            success: function(response) {
-                if (response.status === "locked") {
-                    Swal.fire({
-                        icon: 'info',
-                        title: 'Informasi',
-                        text: response.message,
-                        // timer: 10000,
-                        showConfirmButton: false
-                    });
-                } else {
-                    // Render data ke halaman jika tidak terkunci
-                    renderPatientData(response.patients);
-                }
-            },
-            error: function() {
-                Swal.fire({
-                    icon: 'error',
-                    title: 'Error',
-                    text: 'Gagal mengupdate data. Silahkan refresh manual setelah beberapa saat.',
-                    timer: 10000,
-                    showConfirmButton: false
-                });
-            }
-        });
         
         // Event diterima, lakukan aksi
         channel.bind('data_updated', function(data) {
@@ -148,15 +120,15 @@
             setTimeout(function() {
                 // Refresh data
                 $.ajax({
-                    url: "/ajax/process", 
+                    url: "/ajax/process",  // Sesuaikan dengan route API-mu
                     type: "GET",
                     success: function(response) {
                         if (response.status === "locked") {
                             Swal.fire({
                                 icon: 'info',
                                 title: 'Informasi',
-                                text: 'Transaksi dalam antrian.',
-                                timer: 10000,
+                                text: response.message,
+                                // timer: 10000,
                                 showConfirmButton: false
                             });
                         } else {
@@ -168,13 +140,12 @@
                         Swal.fire({
                             icon: 'error',
                             title: 'Error',
-                            text: 'Terjadi kesalahan saat mengambil data.',
+                            text: 'Gagal mengupdate data. Silahkan refresh manual setelah beberapa saat.',
                             timer: 10000,
                             showConfirmButton: false
                         });
                     }
                 });
-                
             }, randomDelay);
         });
     </script>
