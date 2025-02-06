@@ -94,10 +94,21 @@
     <script src="https://cdn.jsdelivr.net/npm/@popperjs/core@2.11.8/dist/umd/popper.min.js"></script>
     <script src="https://cdn.jsdelivr.net/npm/sweetalert2@11"></script>
     <script src="bootstrap-5.3.3-dist/js/bootstrap.bundle.min.js"></script>
+    <script src="https://js.pusher.com/7.0/pusher.min.js"></script>
 
     <script src="{{ asset('extra/script.js') }}"></script>
 
     <script>
+        // Konfigurasi Pusher
+        Pusher.logToConsole = true;
+        var pusher = new Pusher('base64:TlAZweLNiE36FZiSZNy66R7oZbyVnnpeM1I4gc3QGRw=', {
+            cluster: 'ap1',
+            forceTLS: true
+        });
+
+        // Subscribe channel 'data_update'.
+        var channel = pusher.subscribe('data-update');
+
         $.ajax({
             url: "/ajax/process",  // Sesuaikan dengan route API-mu
             type: "GET",
@@ -107,7 +118,7 @@
                         icon: 'info',
                         title: 'Informasi',
                         text: response.message,
-                        timer: 10000,
+                        // timer: 10000,
                         showConfirmButton: false
                     });
                 } else {
@@ -119,11 +130,52 @@
                 Swal.fire({
                     icon: 'error',
                     title: 'Error',
-                    text: 'Terjadi kesalahan saat mengambil data.',
+                    text: 'Gagal mengupdate data. Silahkan refresh manual setelah beberapa saat.',
                     timer: 10000,
                     showConfirmButton: false
                 });
             }
+        });
+        
+        // Event diterima, lakukan aksi
+        channel.bind('data_updated', function(data) {
+            console.log('Data update: ', data.message);
+
+            // Random delay supaya tidak ada tarikan data bersamaan di temp_data_ajax
+            const randomDelay = Math.floor(Math.random() * (5000 - 1000 + 1)) + 3000;
+
+            // Menunggu dengan delay acak sebelum refresh.
+            setTimeout(function() {
+                // Refresh data
+                $.ajax({
+                    url: "/ajax/process", 
+                    type: "GET",
+                    success: function(response) {
+                        if (response.status === "locked") {
+                            Swal.fire({
+                                icon: 'info',
+                                title: 'Informasi',
+                                text: 'Transaksi dalam antrian.',
+                                timer: 10000,
+                                showConfirmButton: false
+                            });
+                        } else {
+                            // Render data ke halaman jika tidak terkunci
+                            renderPatientData(response.patients);
+                        }
+                    },
+                    error: function() {
+                        Swal.fire({
+                            icon: 'error',
+                            title: 'Error',
+                            text: 'Terjadi kesalahan saat mengambil data.',
+                            timer: 10000,
+                            showConfirmButton: false
+                        });
+                    }
+                });
+                
+            }, randomDelay);
         });
     </script>
 </body>
