@@ -106,46 +106,49 @@
             forceTLS: true
         });
 
-        // Subscribe channel 'data_update'.
+        // Subscribe ke channel 'data-update'
         var channel = pusher.subscribe('data-update');
-        
-        // Event diterima, lakukan aksi
-        channel.bind('data_updated', function(data) {
-            console.log('Data update: ', data.message);
 
-            // Random delay supaya tidak ada tarikan data bersamaan di temp_data_ajax
-            const randomDelay = Math.floor(Math.random() * (5000 - 1000 + 1)) + 3000;
-
-            // Menunggu dengan delay acak sebelum refresh.
-            setTimeout(function() {
-                // Refresh data
-                $.ajax({
-                    url: "/ajax/process",  // Sesuaikan dengan route API-mu
-                    type: "GET",
-                    success: function(response) {
-                        if (response.status === "locked") {
-                            Swal.fire({
-                                icon: 'info',
-                                title: 'Informasi',
-                                text: response.message,
-                                // timer: 10000,
-                                showConfirmButton: false
-                            });
-                        } else {
-                            // Render data ke halaman jika tidak terkunci
-                            renderPatientData(response.patients);
-                        }
-                    },
-                    error: function() {
+        // Fungsi untuk mengambil data terbaru
+        function fetchData() {
+            $.ajax({
+                url: "/ajax/process",  
+                type: "GET",
+                success: function(response) {
+                    if (response.status === "locked") {
                         Swal.fire({
-                            icon: 'error',
-                            title: 'Error',
-                            text: 'Gagal mengupdate data. Silahkan refresh manual setelah beberapa saat.',
-                            timer: 10000,
+                            icon: 'info',
+                            title: 'Informasi',
+                            text: response.message,
                             showConfirmButton: false
                         });
                     }
-                });
+                },
+                error: function() {
+                    Swal.fire({
+                        icon: 'error',
+                        title: 'Error',
+                        text: 'Gagal mengupdate data. Silahkan refresh manual setelah beberapa saat.',
+                        timer: 10000,
+                        showConfirmButton: false
+                    });
+                }
+            });
+        }
+
+        // Langsung jalankan AJAX pertama kali saat halaman dibuka
+        fetchData();
+
+        // Event dari Pusher diterima → Coba ambil data lagi setelah delay acak
+        channel.bind('data_updated', function(data) {
+            console.log('Data update diterima dari Pusher: ', data.message);
+
+            // Random delay supaya tidak semua dashboard mengambil data bersamaan
+            const randomDelay = Math.floor(Math.random() * (3000 - 1000 + 1)) + 1000;
+
+            setTimeout(function() {
+                console.log('Menjalankan fetchData setelah delay: ', randomDelay);
+                fetchData(); // Ambil data terbaru setelah delay
             }, randomDelay);
         });
     </script>
