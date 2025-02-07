@@ -300,11 +300,45 @@ $(document).ready(function() {
         }
     }
 
+    function checkDataLockAndUpdate(retry = 0) {
+        $.ajax({
+            url: "/ajax/process", // Route API untuk status terkunci atau tidak.
+            type: "GET",
+            success: function(response) {
+                if (response.status === "locked") {
+                    Swal.fire({
+                        icon: 'info',
+                        title: 'Pembaruan data sedang berlangsung.',
+                        text: response.message,
+                        timer: 10000,
+                        showConfirmButton: false
+                    });
+
+                    if (retry < 3) {
+                        setTimeout(() => checkDataLockAndUpdate(retry + 1), 5000);
+                    } else {
+                        Swal.fire({
+                            icon: 'warning',
+                            title: 'Pembaruan data masih berlangsung.',
+                            text: 'Harap tunggu beberapa saat',
+                            confirmButtonText: 'OK'
+                        });
+                    }
+                }
+            },
+            error: function() {
+                updatePatientCard();
+            }
+        });
+    }
+
     updatePatientCard();
     updateTime();
     updateCleaningTime();
+    checkDataLockAndUpdate();
     
     setInterval(updatePatientCard, 60000);
     setInterval(updateTime, 1000);
     setInterval(updateCleaningTime, 1000);
+    setInterval(checkDataLockAndUpdate, 60000);
 });
