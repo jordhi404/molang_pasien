@@ -45,7 +45,7 @@ class Patient extends Model
                 'status' => 'locked',
                 'message' => 'Proses data update sedang berlangsung. Silakan refresh setelah 5-10 detik.'
             ]);
-        }
+        } 
 
         // Tandai proses sedang berlangsung.
         DB::connection('pgsql')->table('process_lock')->insert([

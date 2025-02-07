@@ -96,36 +96,5 @@
     <script src="bootstrap-5.3.3-dist/js/bootstrap.bundle.min.js"></script>
 
     <script src="{{ asset('extra/script.js') }}"></script>
-
-    <script>
-        var retry = 0;
-        $.ajax({
-            url: "/ajax/process", // Route API untuk status terkunci atau tidak.
-            type: "GET",
-            success: function(response) {
-                if (response.status === "locked") {
-                    Swal.fire({
-                        icon: 'info',
-                        title: 'Pembaruan data sedang berlangsung.',
-                        text: response.message,
-                        timer: 10000,
-                        showConfirmButton: false
-                    });
-                } else {
-                    // Render data ke halaman jika tidak terkunci
-                    renderPatientData(response.patients);
-                }
-            },
-            error: function() {
-                Swal.fire({
-                    icon: 'error',
-                    title: 'Error',
-                    text: 'Terjadi kesalahan saat mengambil data.',
-                    timer: 10000,
-                    showConfirmButton: false
-                });
-            }
-        });
-    </script>
 </body>
 </html>
