@@ -43,7 +43,7 @@ class Patient extends Model
             Log::info('Proses data update sedang berlangsung....');
             return response()->json([
                 'status' => 'locked',
-                'message' => 'Proses data update sedang berlangsung. Silakan refresh setelah 5-10 detik.'
+                'message' => 'Proses data update sedang berlangsung. Harap tunggu'
             ]);
         } 
 
