@@ -310,20 +310,19 @@ $(document).ready(function() {
                         icon: 'info',
                         title: 'Pembaruan data sedang berlangsung.',
                         text: response.message,
-                        timer: 10000,
+                        timer: 3000,
                         showConfirmButton: false
                     });
 
                     if (retry < 3) {
                         setTimeout(() => checkDataLockAndUpdate(retry + 1), 10000);
                     } else {
-                        Swal.fire({
-                            icon: 'warning',
-                            title: 'Pembaruan data masih berlangsung.',
-                            text: 'Harap tunggu beberapa saat',
-                            confirmButtonText: 'OK'
-                        });
+                        setTimeout(() => checkDataLockAndUpdate(0), 5000);
                     }
+                }
+
+                if (response.status === "success") {
+                    updatePatientCard();
                 }
             },
             error: function() {

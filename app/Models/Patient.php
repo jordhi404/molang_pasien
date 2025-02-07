@@ -45,7 +45,7 @@ class Patient extends Model
                 'status' => 'locked',
                 'message' => 'Proses data update sedang berlangsung. Harap tunggu'
             ]);
-        } 
+        }
 
         // Tandai proses sedang berlangsung.
         DB::connection('pgsql')->table('process_lock')->insert([
@@ -211,8 +211,17 @@ class Patient extends Model
             DB::connection('pgsql')->rollBack();
             Log::error('Error dalam proses data: ' . $e->getMessage());
         } finally {
+            // Ambil data terbaru dari PostgreSQL setelah update selesai
+            $updatedData = DB::connection('pgsql')->table('temp_data_ajax')->get();
+
             // Hapus flag lock setelah proses selesai.
             DB::connection('pgsql')->table('process_lock')->where('process_name', 'data_update')->delete();
+
+            return response()->json([
+                'status' => 'success',
+                'message' => 'update selesai',
+                'data' => $updatedData
+            ]);
         }
     }
 }
