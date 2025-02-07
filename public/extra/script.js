@@ -315,7 +315,7 @@ $(document).ready(function() {
                     });
 
                     if (retry < 3) {
-                        setTimeout(() => checkDataLockAndUpdate(retry + 1), 5000);
+                        setTimeout(() => checkDataLockAndUpdate(retry + 1), 10000);
                     } else {
                         Swal.fire({
                             icon: 'warning',
@@ -340,5 +340,5 @@ $(document).ready(function() {
     setInterval(updatePatientCard, 60000);
     setInterval(updateTime, 1000);
     setInterval(updateCleaningTime, 1000);
-    setInterval(checkDataLockAndUpdate, 60000);
+    setInterval(checkDataLockAndUpdate, 120000);
 });
