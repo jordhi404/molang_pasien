@@ -302,7 +302,7 @@ $(document).ready(function() {
 
     function checkDataLockAndUpdate(retry = 0) {
         $.ajax({
-            url: "/ajax/process", // Route API untuk status terkunci atau tidak.
+            url: "/molang_pasien/ajax/process", // Route API untuk status terkunci atau tidak.
             type: "GET",
             success: function(response) {
                 if (response.status === "locked") {
