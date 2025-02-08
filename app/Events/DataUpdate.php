@@ -1,5 +1,9 @@
 <?php
-
+/*
+    FILE INI SUDAH TIDAK DIPAKAI.
+    TIDAK PERLU DIPEDULIKAN TAPI AKAN DIBIARKAN UNTUK JAGA-JAGA.
+    AKHIRNYA TIDAK DIPAKAI PUN YA SUDAH
+*/
 namespace App\Events;
 
 use Illuminate\Broadcasting\Channel;
