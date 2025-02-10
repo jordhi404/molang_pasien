@@ -187,7 +187,7 @@ class RanapController extends Controller
 
     // Fungsi untuk menentukan data di temp_data_ajax expired atau tidak.
     private function isDataExpired($data) {
-        $expirationTime = 100;
+        $expirationTime = 120;
         $updateAt = Carbon::parse($data->updated_at);
         $expired = $updateAt->diffInSeconds(now());
 

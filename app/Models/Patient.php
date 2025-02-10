@@ -163,7 +163,7 @@ class Patient extends Model
             ");
 
             $data_batch = [];
-            $valid_time = now()->subSeconds(100); // Usia data 100 detik.
+            $valid_time = now()->subSeconds(120); // Usia data 120 detik.
 
             // Simpan ke tabel temp_data_ajax di pgsql.
             foreach ($patients_data as $data) {
