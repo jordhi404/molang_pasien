@@ -115,19 +115,16 @@ class RanapController extends Controller
             // Mengecek unit jangdik dengan standing order.
             $orderTypes = DB::table('order_types')->get();
 
-            if ($patient->TungguJangdik || $patient->TungguFarmasi || $patient->Keperawatan) {
+            if ($status == 'Tunggu Jangdik') {
                 foreach ($orderTypes as $orderType) {
                     if (str_contains($patient->TungguJangdik, $orderType->code_prefix)) {
                         $patient->order_icon = $orderType->icon_path;
                         break;
                     }
-                    
+                }
+            } elseif ($status == 'Tunggu Farmasi') {
+                foreach ($orderTypes as $orderType) {
                     if (str_contains($patient->TungguFarmasi, $orderType->code_prefix)) {
-                        $patient->order_icon = $orderType->icon_path;
-                        break;
-                    }
-
-                    if (str_contains($patient->Keperawatan, $orderType->code_prefix)) {
                         $patient->order_icon = $orderType->icon_path;
                         break;
                     }

@@ -22,7 +22,7 @@ class Patient extends Model
         return $this->hasOne(Bed::class, 'MRN', 'MRN');
     }
 
-    /* CONNECTION KE DATABASE SQLSRV UNTUK MENGAMBIL DATA PASIEN. */
+    /* FUNCTION UNTUK MENGAMBIL DATA PASIEN. */
     public static function getPatientData()
     {
         $max = now()->subMinutes(2);
@@ -204,17 +204,13 @@ class Patient extends Model
                 DB::connection('pgsql')->table('temp_data_ajax')->insert($data_batch);
             }
 
-            // Commit transaksi.
             DB::connection('pgsql')->commit();
         } catch (Exception $e) {
-            // Rollback transaksi jika ada error.
             DB::connection('pgsql')->rollBack();
             Log::error('Error dalam proses data: ' . $e->getMessage());
         } finally {
-            // Ambil data terbaru dari PostgreSQL setelah update selesai
             $updatedData = DB::connection('pgsql')->table('temp_data_ajax')->get();
 
-            // Hapus flag lock setelah proses selesai.
             DB::connection('pgsql')->table('process_lock')->where('process_name', 'data_update')->delete();
 
             return response()->json([
