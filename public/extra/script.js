@@ -310,14 +310,14 @@ $(document).ready(function() {
                         icon: 'info',
                         title: 'Pembaruan data sedang berlangsung.',
                         text: response.message,
-                        timer: 3000,
+                        timer: 5000,
                         showConfirmButton: false
                     });
 
                     if (retry < 3) {
-                        setTimeout(() => checkDataLockAndUpdate(retry + 1), 10000);
+                        setTimeout(() => checkDataLockAndUpdate(retry + 1), 5000);
                     } else {
-                        setTimeout(() => checkDataLockAndUpdate(0), 5000);
+                        setTimeout(() => checkDataLockAndUpdate(0), 3000);
                     }
                 }
 
