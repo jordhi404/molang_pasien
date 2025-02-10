@@ -305,6 +305,7 @@ $(document).ready(function() {
             type: "GET",
             success: function(response) {
                 if (response.status === "locked") {
+                    console.log("Menampilkan notifikasi.");
                     Swal.fire({
                         icon: 'info',
                         title: 'Pembaruan data sedang berlangsung.',
@@ -314,7 +315,7 @@ $(document).ready(function() {
                     });
 
                     if (retry < 3) {
-                        setTimeout(() => checkDataLockAndUpdate(retry + 1), 5000);
+                        setTimeout(() => checkDataLockAndUpdate(retry + 1), 3000);
                     } else {
                         setTimeout(() => checkDataLockAndUpdate(0), 3000);
                     }
