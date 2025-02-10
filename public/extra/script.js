@@ -315,17 +315,21 @@ $(document).ready(function() {
                     });
 
                     if (retry < 3) {
+                        console.log("Mencoba ulang ke-" + retry);
                         setTimeout(() => checkDataLockAndUpdate(retry + 1), 3000);
                     } else {
+                        console.log("Bersiap mengulang lagi");
                         setTimeout(() => checkDataLockAndUpdate(0), 3000);
                     }
                 }
 
                 if (response.status === "success") {
+                    console.log("Data sudah terupdate.");
                     updatePatientCard();
                 }
             },
             error: function() {
+                console.error("Koneksi ke API mengalami error");
                 updatePatientCard();
             }
         });
