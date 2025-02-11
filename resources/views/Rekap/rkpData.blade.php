@@ -3,7 +3,8 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Rekap Data Pasien dan Bed</title>
+    <title>Rekap Data Pasien</title>
+    <link rel="icon" href="{{ asset('Logo_img/ambulance.gif') }}" type="image/x-icon">
     <link rel="stylesheet" href="bootstrap-5.3.3-dist/css/bootstrap.min.css">
     <style>
         html, body{
