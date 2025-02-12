@@ -317,7 +317,7 @@ $(document).ready(function() {
                     console.log("Menampilkan notifikasi.");
                     Swal.fire({
                         icon: 'info',
-                        title: 'Pembaruan data sedang berlangsung.',
+                        title: 'Data Update.',
                         text: response.message,
                         timer: 5000,
                         showConfirmButton: false
