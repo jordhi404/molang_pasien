@@ -2,7 +2,7 @@
 $(document).ready(function() {
     const AJAX_TIMEOUT = 20000;
     const MAX_RETRY_COUNT = 3;
-    const RETRY_INTERVAL = 2000;
+    const RETRY_INTERVAL = 5000;
     const UPDATE_INTERVAL = 60000;
     const TIME_UPDATE_INTERVAL = 1000;
     const LOCK_CHECK_INTERVAL = 120000;
@@ -327,10 +327,10 @@ $(document).ready(function() {
 
                     if (retry < MAX_RETRY_COUNT) {
                         console.log("Mencoba ulang ke-" + retry);
-                        setTimeout(() => checkDataLockAndUpdate(retry + 1), 3000);
+                        setTimeout(() => checkDataLockAndUpdate(retry + 1), RETRY_INTERVAL);
                     } else {
                         console.log("Bersiap mengulang lagi");
-                        setTimeout(() => checkDataLockAndUpdate(0), 3000);
+                        setTimeout(() => checkDataLockAndUpdate(0), RETRY_INTERVAL);
                     }
                 }
 
