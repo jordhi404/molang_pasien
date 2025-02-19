@@ -320,7 +320,7 @@ $(document).ready(function() {
                         icon: 'info',
                         title: 'Data Update.',
                         text: response.message,
-                        timer: 5000,
+                        timer: 10000,
                         showConfirmButton: false
                     });
 
