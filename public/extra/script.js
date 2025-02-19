@@ -330,8 +330,7 @@ $(document).ready(function() {
                         console.log("Mencoba ulang ke-" + retry);
                         setTimeout(() => checkDataLockAndUpdate(retry + 1), RETRY_INTERVAL);
                     } else {
-                        console.log("Bersiap mengulang lagi");
-                        setTimeout(() => checkDataLockAndUpdate(0), REST_INTERVAL);
+                        updatePatientCard();
                     }
                 }
 
