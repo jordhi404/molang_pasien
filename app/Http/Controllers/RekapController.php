@@ -86,7 +86,7 @@ class RekapController extends Controller
                             FROM ReportPrintLog 
                             WHERE ReportID = 7012 
                                 AND ReportParameter = CONCAT('RegistrationID = ', r.RegistrationID)) AS BolehPulang"),
-                DB::raw("CAST(cv.DischargeDate AS DATETIME) + CAST(cv.DischargeTime AS TIME) AS DischargeDateTime"),
+                DB::raw("FORMAT((CAST(cv.DischargeDate AS DATETIME) + CAST(cv.DischargeTime AS TIME)), 'dd/MM/yyyy HH:mm') AS DischargeDateTime"),
                 DB::raw("FORMAT(cv.RoomDischargeDateTime, 'dd/MM/yyyy HH:mm') AS RoomDischargeDateTime"),
                 DB::raw("CONCAT(DATEDIFF(SECOND, 
                             CASE 
