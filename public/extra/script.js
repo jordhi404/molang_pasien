@@ -318,19 +318,38 @@ $(document).ready(function() {
             success: function(response) {
                 if (response.status === "locked") {
                     console.log("Menampilkan notifikasi.");
-                    Swal.fire({
+
+                    let countdown = retry < MAX_RETRY_COUNT ? RETRY_INTERVAL/1000 : REST_INTERVAL/1000;
+                    let maxCountdown = countdown;
+                    
+                    // Menampilkan notifikasi pertama kali.
+                    let SwalInstance = Swal.fire({
                         icon: 'info',
                         title: 'Data Update.',
-                        text: response.message,
+                        html: `${response.message}. Mencoba memperbarui dalam ${countdown} detik...`,
                         timer: 10000,
                         showConfirmButton: false
                     });
+
+                    // Interval untuk update countdown.
+                    let interval = setInterval(() => {
+                        countdown --;
+                        if (Swal.isVisible()) {
+                            SwalInstance.update({
+                                html: `${response.message}<br>Mencoba memperbarui dalam ${countdown} detik...`
+                            });
+                        }
+
+                        if (countdown <= 0) {
+                            clearInterval(interval);
+                        }
+                    }, 1000);
 
                     if (retry < MAX_RETRY_COUNT) {
                         console.log("Mencoba ulang ke-" + retry);
                         setTimeout(() => checkDataLockAndUpdate(retry + 1), RETRY_INTERVAL);
                     } else {
-                        updatePatientCard();
+                        setTimeout(() => updatePatientCard(), REST_INTERVAL);
                     }
                 }
 

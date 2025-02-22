@@ -43,7 +43,7 @@ class Patient extends Model
             Log::info('Proses data update sedang berlangsung....');
             return response()->json([
                 'status' => 'locked',
-                'message' => 'Proses data update sedang berlangsung. Harap tunggu'
+                'message' => 'Data dalam proses update.'
             ]);
         }
 
@@ -75,7 +75,7 @@ class Patient extends Model
                             FROM PatientChargesHD
                             WHERE VisitID=cv.VisitID 
                             AND GCTransactionStatus<>'X121^999' 
-                            AND GCTransactionStatus IN ('X121^001','X121^002','X121^003')
+                            AND GCTransactionStatus IN ('X121^001')
                             AND HealthcareServiceUnitID IN (82,83,99,138,140)
                             ORDER BY TestOrderID ASC),
                         Keperawatan =
@@ -83,7 +83,7 @@ class Patient extends Model
                             FROM PatientChargesHD
                             WHERE VisitID=cv.VisitID 
                             AND GCTransactionStatus<>'X121^999' 
-                            AND GCTransactionStatus IN ('X121^001','X121^002','X121^003')
+                            AND GCTransactionStatus IN ('X121^001')
                             AND HealthcareServiceUnitID NOT IN (82,83,99,138,140,101,137)
                             ORDER BY TestOrderID ASC),
                         TungguFarmasi = 
@@ -103,8 +103,7 @@ class Patient extends Model
                             (SELECT COUNT(DISTINCT GCTransactionStatus) 
                             FROM PatientChargesHD 
                             WHERE VisitID=cv.VisitID 
-                            AND GCTransactionStatus IN ('X121^001','X121^002','X121^003')),
-            --          Keterangan = sc.StandardCodeName,
+                            AND GCTransactionStatus IN ('X121^001')),
                         Billing =
                             (SELECT MAX(CreatedDate) 
                                 FROM PatientBill 
