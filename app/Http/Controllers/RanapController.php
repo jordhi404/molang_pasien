@@ -15,6 +15,18 @@ use Illuminate\Support\Facades\DB;
 
 class RanapController extends Controller
 {
+    // Fungsi untuk menentukan data di temp_data_ajax expired atau tidak.
+    private function isDataExpired($data) {
+        $expirationTime = 120;
+        $updateAt = Carbon::parse($data->updated_at);
+        $expired = $updateAt->diffInSeconds(now());
+
+        Log::info("Cek Expired: " . $expired . " detik.");
+        Log::info("UpdateAt: " . $updateAt);
+        
+        return $expired > $expirationTime;
+    }
+    
     public function getPatientDataAjax(Request $request) {
         $data = DB::connection('pgsql')->table('temp_data_ajax')->first();
         $beds = collect(Bed::getBedToClean());
@@ -187,18 +199,6 @@ class RanapController extends Controller
             'beds' => $beds->values()->toArray(),
             'customerTypeColors' => $customerTypeColors->toArray(),
         ]);
-    }
-
-    // Fungsi untuk menentukan data di temp_data_ajax expired atau tidak.
-    private function isDataExpired($data) {
-        $expirationTime = 120;
-        $updateAt = Carbon::parse($data->updated_at);
-        $expired = $updateAt->diffInSeconds(now());
-
-        Log::info("Cek Expired: " . $expired . " detik.");
-        Log::info("UpdateAt: " . $updateAt);
-        
-        return $expired > $expirationTime;
     }
 
     /* FUNCTION UNTUK MENAMPILKAN DATA DI DASHBOARD RANAP. */

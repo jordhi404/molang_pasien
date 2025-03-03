@@ -33,8 +33,6 @@ class Patient extends Model
             ->where('locked_at', '<=', $max)
             ->delete();
 
-        Log::info('Lock dibuat pada: ' . now());
-
         $lockExists = DB::connection('pgsql')->table('process_lock')
             ->where('process_name', 'data_update')
             ->where('locked_at', '>', $max)
@@ -57,6 +55,7 @@ class Patient extends Model
             'locked_at' => now(),
             'ip_address' => request()->ip(), // IP user yang melakukan lock
         ]);
+        Log::info('Lock dibuat pada: ' . now());
 
         try {
             // Mulai transaksi.
