@@ -33,10 +33,14 @@ class Patient extends Model
             ->where('locked_at', '<=', $max)
             ->delete();
 
+        Log::info('Lock dibuat pada: ' . now());
+
         $lockExists = DB::connection('pgsql')->table('process_lock')
             ->where('process_name', 'data_update')
             ->where('locked_at', '>', $max)
             ->exists();
+
+        Log::info('Cek apakah sudah ada lock: ' . json_encode($lockExists));
 
         if ($lockExists) {
             // Jika ada yang melakukan proses, hentikan eksekusi
@@ -51,6 +55,7 @@ class Patient extends Model
         DB::connection('pgsql')->table('process_lock')->insert([
             'process_name' => 'data_update',
             'locked_at' => now(),
+            'ip_address' => request()->ip(), // IP user yang melakukan lock
         ]);
 
         try {
@@ -176,6 +181,8 @@ class Patient extends Model
                                 ->where('BedCode', $data->BedCode)
                                 ->where('updated_at', '>=', $valid_time); // Cek apakah masih valid.
                         })->exists();
+
+                        Log::info('Valid time: ' . $valid_time);
 
                 if(!$exists) {
                     $data_batch[] = [
