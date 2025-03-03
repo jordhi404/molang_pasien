@@ -201,6 +201,7 @@ class Patient extends Model
                         'BolehPulang' => $data->BolehPulang,
                         'created_at' => now(),
                         'updated_at' => now(),
+                        'update_by' => request()->ip(),
                     ];
                 }
             }
