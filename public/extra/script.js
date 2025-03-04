@@ -373,5 +373,5 @@ $(document).ready(function() {
     setInterval(updatePatientCard, UPDATE_INTERVAL);
     setInterval(updateTime, TIME_UPDATE_INTERVAL);
     setInterval(updateCleaningTime, TIME_UPDATE_INTERVAL);
-    setInterval(checkDataLockAndUpdate, LOCK_CHECK_INTERVAL);
+    // setInterval(checkDataLockAndUpdate, LOCK_CHECK_INTERVAL);
 });
