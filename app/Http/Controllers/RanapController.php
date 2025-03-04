@@ -208,8 +208,7 @@ class RanapController extends Controller
     }
 
     // Fungsi untuk mendapatkan ServiceUnitName berdasarkan kode_bagian
-    protected function getServiceUnit($unit)
-    {
+    protected function getServiceUnit($unit){
         return DB::table('service_units')->where('unit_code', $unit)->value('unit_service_name');
     }
     
