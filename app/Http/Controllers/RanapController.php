@@ -24,7 +24,10 @@ class RanapController extends Controller
         Log::info("Cek Expired: " . $expired . " detik.");
         Log::info("UpdateAt: " . $updateAt);
         
-        return $expired > $expirationTime;
+        $isExpired = $expired > $expirationTime;
+        Log::info("Hasil pengecekan expired: " . ($isExpired ? 'Kadaluarsa' : 'Masih valid'));
+
+        return $isExpired;
     }
     
     public function getPatientDataAjax(Request $request) {
