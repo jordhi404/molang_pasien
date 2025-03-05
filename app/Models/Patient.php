@@ -95,7 +95,7 @@ class Patient extends Model
                             FROM PatientChargesHD
                             WHERE VisitID=cv.VisitID 
                             AND GCTransactionStatus<>'X121^999' 
-                            AND GCTransactionStatus IN ('X121^001','X121^002','X121^003')
+                            AND GCTransactionStatus IN ('X121^001')
                             AND HealthcareServiceUnitID IN (101,137)
                             ORDER BY TestOrderID ASC),
                         RegistrationStatus = 

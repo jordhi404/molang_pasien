@@ -263,7 +263,7 @@
                         datasets: [{
                             label: 'Presentase',
                             data: [percentage],
-                            backgroundColor: percentage > 100 ? 'red' : (percentage > 80 ? 'orange' : (percentage > 50 ? 'yellow' : 'green')),
+                            backgroundColor: percentage > 100 ? 'red' : 'green',
                             borderColor: 'black',
                             borderWidth: 1.3
                         }]
