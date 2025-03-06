@@ -21,9 +21,7 @@ class RanapController extends Controller
         $updateAt = Carbon::parse($data->updated_at);
         $expired = $updateAt->diffInSeconds(now());
         $ip = $data->update_by;
-
-        Log::info("UpdateAt: " . $updateAt . " by " . $ip);
-        
+        Log::info("UpdateAt: " . $updateAt . " by " . $ip);    
         $isExpired = $expired > $expirationTime;
         Log::info("Expired? " . $isExpired);
         Log::info("Validasi data: " . ($isExpired ? 'Kadaluarsa pada: ' . $expired : 'Masih valid'));
