@@ -55,13 +55,25 @@ class RanapController extends Controller
 
         /* MENGAMBIL DATA PASIEN UNTUK DITAMPILKAN. */
         if ($unit !== 'TEKNOLOGI INFORMASI') {
-            $patients = $patients->filter(function ($patient) use ($serviceUnit) {
-                return $patient->ServiceUnitName == $serviceUnit;
-            });
+            if ($unit == 'PENDAFTARAN') {
+                $allowedWards = ['TJAN KHEE SWAN BARAT', 'TJAN KHEE SWAN TIMUR', 'RUANG ASA'];
 
-            $beds = $beds->filter(function ($bed) use ($serviceUnit) {
-                return $bed->ServiceUnitName == $serviceUnit;
-            });
+                $patients = $patients->filter(function ($patient) use ($allowedWards) {
+                    return in_array($patient->ServiceUnitName, $allowedWards);
+                });
+    
+                $beds = $beds->filter(function ($bed) use ($allowedWards) {
+                    return in_array($bed->ServiceUnitName, $allowedWards);
+                });
+            } else {
+                $patients = $patients->filter(function ($patient) use ($serviceUnit) {
+                    return $patient->ServiceUnitName == $serviceUnit;
+                });
+    
+                $beds = $beds->filter(function ($bed) use ($serviceUnit) {
+                    return $bed->ServiceUnitName == $serviceUnit;
+                });
+            }
         }
 
         Log::info('IP client: ' . $ipAddress);
