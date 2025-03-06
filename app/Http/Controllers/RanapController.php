@@ -20,25 +20,27 @@ class RanapController extends Controller
         $expirationTime = 120;
         $updateAt = Carbon::parse($data->updated_at);
         $expired = $updateAt->diffInSeconds(now());
+        $ip = $data->update_by;
 
-        Log::info("Cek Expired: " . $expired . " detik.");
-        Log::info("UpdateAt: " . $updateAt);
+        Log::info("UpdateAt: " . $updateAt . " by " . $ip);
         
         $isExpired = $expired > $expirationTime;
-        Log::info("Hasil pengecekan expired: " . ($isExpired ? 'Kadaluarsa' : 'Masih valid'));
+        Log::info("Expired? " . $isExpired);
+        Log::info("Validasi data: " . ($isExpired ? 'Kadaluarsa pada: ' . $expired : 'Masih valid'));
 
         return $isExpired;
     }
     
     public function getPatientDataAjax(Request $request) {
         $data = DB::connection('pgsql')->table('temp_data_ajax')->first();
+        $expiredData = $this->isDataExpired($data);
         $beds = collect(Bed::getBedToClean());
         $ipAddress = $request->ip();
         $unit = ip_mappings::on('pgsql')->where('ip_address', $ipAddress)->value('unit');
         $serviceUnit = $this->getServiceUnit($unit);
 
         // Cek apakah data sudah expired.
-        if (!$data || $this->isDataExpired($data)) {
+        if (!$data || $expiredData) {
             // Data expired, hapus data lama lalu ambil data baru.
             DB::connection('pgsql')->table('temp_data_ajax')->truncate();
             Log::info('Truncate temp_data_ajax pada: ' . now());
@@ -53,7 +55,7 @@ class RanapController extends Controller
         }
         $patients = collect($data);
 
-        /* MENGAMBIL DATA PASIEN UNTUK DITAMPILKAN. */
+        /* FILTER DATA PASIEN UNTUK DITAMPILKAN. */
         if ($unit !== 'TEKNOLOGI INFORMASI') {
             if ($unit == 'PENDAFTARAN') {
                 $allowedWards = ['TJAN KHEE SWAN BARAT', 'TJAN KHEE SWAN TIMUR', 'RUANG ASA'];
@@ -76,6 +78,7 @@ class RanapController extends Controller
             }
         }
 
+        /* UNTUK MEMASTIKAN IP USER DAN UNITNYA BENAR. */
         Log::info('IP client: ' . $ipAddress);
         Log::info('unit IP address: ' . $unit);
         Log::info('Service Unit: ' . $serviceUnit);
@@ -85,8 +88,7 @@ class RanapController extends Controller
         $customerTypeIcon = DB::table('customer_type_colors')->pluck('logo_path', 'customer_type');
 
         foreach ($patients as $patient) {
-            // Patient's short note.
-            $patient->short_note = $patient->CatRencanaPulang ? Str::limit($patient->CatRencanaPulang, 10) : null;
+            $patient->short_note = $patient->CatRencanaPulang ? Str::limit($patient->CatRencanaPulang, 10) : null; // Patient's short note.
             $currentTime = Carbon::now();
             $status = $patient->Keterangan;
             $dischargeTime = Carbon::parse($patient-> RencanaPulang);
@@ -97,8 +99,10 @@ class RanapController extends Controller
             $patient -> billingDate = $billingDate;
             $patient -> customerTypeIcons = $customerTypeIcons;
 
-            $patient -> customerTypeIcons = '/molang_pasien' . $customerTypeIcons;
 
+            $column = $this-> mapStatusToColumn($status); // Mapping status ke kolom tabel.
+
+            $patient -> customerTypeIcons = '/molang_pasien' . $customerTypeIcons;
 
             // Mapping status ke kolom tabel.
             $column = $this-> mapStatusToColumn($status);
