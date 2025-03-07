@@ -325,8 +325,8 @@ $(document).ready(function() {
                     // Menampilkan notifikasi pertama kali.
                     let SwalInstance = Swal.fire({
                         icon: 'info',
-                        title: 'Data Update.',
-                        html: `${response.message}. Mencoba memperbarui dalam ${countdown} detik...`,
+                        title: `${response.message}`,
+                        html: `Mencoba memperbarui dalam ${countdown} detik...`,
                         timer: 10000,
                         showConfirmButton: false
                     });
@@ -336,7 +336,7 @@ $(document).ready(function() {
                         countdown --;
                         if (Swal.isVisible()) {
                             SwalInstance.update({
-                                html: `${response.message}<br>Mencoba memperbarui dalam ${countdown} detik...`
+                                html: `Mencoba memperbarui dalam ${countdown} detik...`
                             });
                         }
 
