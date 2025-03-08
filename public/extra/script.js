@@ -14,7 +14,7 @@ $(document).ready(function() {
 
     function updatePatientCard() {
         $.ajax({
-            url: '/ajax/patients',
+            url: '/molang_pasien/ajax/patients',
             method: 'GET',
             timeout: AJAX_TIMEOUT,
             beforeSend: function() {
@@ -171,13 +171,15 @@ $(document).ready(function() {
                 // Sembunyikan indikator loading.
                 $('#loading-indicator').hide();
             },
-            error: function(jqHXR, textStatus) {
+            error: function(jqHXR, textStatus, errorThrown) {
                 if (textStatus === 'timeout') {
                     console.warn('Koneksi timeout. mencoba menghubungkan ulang...');
                     $('#update-info').text('Koneksi timeout. mencoba menghubungkan ulang...');
                 } else {
                     console.warn('Terjadi error: ', textStatus);
                     $('#update-info').text('Terjadi kesalahan.');
+                    console.warn('Terjadi error: ', textStatus, errorThrown);
+                    console.warn('Response: ', jqXHR.responseText);
                 }
 
                 // Percobaan koneksi ulang.
@@ -311,7 +313,7 @@ $(document).ready(function() {
 
     function checkDataLockAndUpdate(retry = 0) {
         $.ajax({
-            url: "/ajax/process", // Route API untuk status terkunci atau tidak.
+            url: "/molang_pasien/ajax/process", // Route API untuk status terkunci atau tidak.
             type: "GET",
             success: function(response) {
                 if (response.status === "locked") {
