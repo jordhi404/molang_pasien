@@ -17,16 +17,14 @@ class RanapController extends Controller
 {
     // Fungsi untuk menentukan data di temp_data_ajax expired atau tidak.
     private function isDataExpired($data) {
-        $expirationTime = 120;
         $updateAt = Carbon::parse($data->updated_at);
-        $expired = $updateAt->diffInSeconds(now());
+        $expirationTime = $updateAt->addMinutes(2);
+        $isExpired = now()->gt($expirationTime);
         $ip = $data->update_by;
 
-        Log::info("UpdateAt: " . $updateAt . " by " . $ip);
-        
-        $isExpired = $expired > $expirationTime;
+        Log::info("UpdateAt: " . $updateAt . " by " . $ip);       
         Log::info("Expired? " . $isExpired);
-        Log::info("Validasi data: " . ($isExpired ? 'Kadaluarsa pada: ' . $expired : 'Masih valid'));
+        Log::info("Validasi data: " . ($isExpired ? 'Kadaluarsa pada: ' . $expirationTime : 'Masih valid'));
 
         return $isExpired;
     }
@@ -41,15 +39,11 @@ class RanapController extends Controller
 
         // Cek apakah data sudah expired.
         if (!$data || $expiredData) {
-            // Data expired, hapus data lama lalu ambil data baru.
-            DB::connection('pgsql')->table('temp_data_ajax')->truncate();
-            Log::info('Truncate temp_data_ajax pada: ' . now());
             Patient::getPatientData();
             Log::info('getPatientData dipanggil pada: ' . now());
             $data = DB::connection('pgsql')->table('temp_data_ajax')->get();
             Log::info('Insert data baru ke temp_data_ajax pada: ' . now());
         } else {
-            // Data tidak expired, ambil data yang sudah ada.
             $data = DB::connection('pgsql')->table('temp_data_ajax')->get();
             Log::info('Data tidak expired.');
         }

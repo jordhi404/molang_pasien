@@ -318,7 +318,6 @@ $(document).ready(function() {
                     console.log("Menampilkan notifikasi.");
 
                     let countdown = retry < MAX_RETRY_COUNT ? RETRY_INTERVAL/1000 : REST_INTERVAL/1000;
-                    let maxCountdown = countdown;
                     
                     // Menampilkan notifikasi pertama kali.
                     let SwalInstance = Swal.fire({
