@@ -164,7 +164,39 @@ $(document).ready(function() {
                     // Memanggil fungsi updateTime untuk memperbarui waktu tunggu.
                     updateTime(response);
                 } else {
-                    console.log('response is not an array.');
+                    console.log('response is null.');
+                    
+                    // let countdown = RETRY_INTERVAL/1000;
+                    
+                    // // Menampilkan notifikasi pertama kali.
+                    // let SwalInstance = Swal.fire({
+                    //     icon: 'info',
+                    //     title: `Data Update`,
+                    //     html: `Mencoba memperbarui dalam ${countdown} detik...`,
+                    //     timer: 10000,
+                    //     showConfirmButton: false
+                    // });
+
+                    // // Interval untuk update countdown.
+                    // let interval = setInterval(() => {
+                    //     countdown --;
+                    //     if (Swal.isVisible()) {
+                    //         SwalInstance.update({
+                    //             html: `Mencoba memperbarui dalam ${countdown} detik...`
+                    //         });
+                    //     }
+
+                    //     if (countdown <= 0) {
+                    //         clearInterval(interval);
+                    //     }
+                    // }, 1000);
+
+                    // if (retry < MAX_RETRY_COUNT) {
+                    //     console.log("Mencoba ulang ke-" + retry);
+                    //     setTimeout(() => checkDataLockAndUpdate(retry + 1), RETRY_INTERVAL);
+                    // } else {
+                    //     setTimeout(() => updatePatientCard(), REST_INTERVAL);
+                    // }
                 }
             },
             complete: function() {

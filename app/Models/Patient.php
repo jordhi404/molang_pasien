@@ -25,45 +25,93 @@ class Patient extends Model
     /* FUNCTION UNTUK MENGAMBIL DATA PASIEN. */
     public static function getPatientData()
     {
-        /* PENGECEKAN LOCK DULU SEBELUM DILANJUTKAN */
-        $lockData = DB::connection('pgsql')->table('process_lock')
+        $max = now()->subMinutes(2);
+
+        // Hapus lock lama jika ada (karena crash atau error)
+        DB::connection('pgsql')->table('process_lock')
             ->where('process_name', 'data_update')
-            ->first();
+            ->where('locked_at', '<=', $max)
+            ->delete();
 
-        if (!$lockData) {
-            DB::connection('pgsql')->table('process_lock')->insert([
-                'process_name' => 'data_update',
-                'locked_at' => now(),
-                'ip_address' => request()->ip(),
+        $lockExists = DB::connection('pgsql')->table('process_lock')
+            ->where('process_name', 'data_update')
+            ->where('locked_at', '>', $max)
+            ->exists();
+
+        Log::info('Cek apakah sudah ada lock: ' . json_encode($lockExists));
+
+        if ($lockExists) {
+            // Jika ada yang melakukan proses, hentikan eksekusi
+            Log::info('Proses data update sedang berlangsung....');
+            return response()->json([
+                'status' => 'locked',
+                'message' => 'Data dalam proses update.'
             ]);
-            Log::info('Lock dibuat pada: ' . now());
-        } else {
-            $locked = Carbon::parse($lockData->locked_at);
-            $maxLocked = $locked->addMinutes(1); // Usia maksimal lock 1 menit.
-            $lockedBy = $lockData->ip_address;
-            log::info('Lock dibuat oleh: ' . $lockedBy);
-
-            if (now()->gt($maxLocked)) {
-                // Jika lock sudah kadaluarsa, hapus dan buat lock baru
-                DB::connection('pgsql')->table('process_lock')
-                    ->where('process_name', 'data_update')
-                    ->delete();
-
-                DB::connection('pgsql')->table('process_lock')->insert([
-                    'process_name' => 'data_update',
-                    'locked_at' => now(),
-                    'ip_address' => request()->ip(),
-                ]);
-                Log::info('Lock lama dihapus dan dibuat lock baru pada: ' . now() . ' oleh: ' . request()->ip());
-            } else {
-                // Jika lock masih aktif, kirim response bahwa proses sedang berlangsung
-                Log::info('Sedang berlangsung proses data update oleh ' . $lockedBy);
-                return response()->json([
-                    'status' => 'locked',
-                    'message' => 'Data Update'
-                ]);
-            }
         }
+
+        // Tandai proses sedang berlangsung.
+        DB::connection('pgsql')->table('process_lock')->insert([
+            'process_name' => 'data_update',
+            'locked_at' => now(),
+            'ip_address' => request()->ip(), // IP user yang melakukan lock
+        ]);
+        Log::info('Lock dibuat pada: ' . now());
+
+        /* PENGECEKAN LOCK DULU SEBELUM DILANJUTKAN */
+        // $lockInserted = DB::connection('pgsql')->table('process_lock')
+        //     ->insertOrIgnore([
+        //         'process_name' => 'data_update',
+        //         'locked_at' => now(),
+        //         'ip_address' => request()->ip(),
+        //     ]);
+
+        // if ($lockInserted) {
+        //     // Jika proses ini berhasil mendapatkan lock, lanjutkan update data.
+        //     Log::info('Lock dibuat oleh: ' . request()->ip() . ' pada: ' . now());
+        // } else {
+        //     // Jika gagal mendapatkan lock, cek data di temp_data_ajax
+        //     $lockData = DB::connection('pgsql')->table('process_lock')
+        //         ->where('process_name', 'data_update')
+        //         ->first();
+
+        //     if ($lockData) {
+        //         $locked = Carbon::parse($lockData->locked_at);
+        //         $maxLocked = $locked->addMinutes(2);
+        //         $lockedBy = $lockData->ip_address;
+
+        //         Log::info('Lock aktif oleh: ' . $lockedBy);
+        //         Log::info('Terjunci pada: ' . $locked);
+        //         Log::info('Maksimal terkunci hingga: ' . $maxLocked);
+
+        //         if (now()->gt($maxLocked)) {
+        //             // Jika lock sudah kadaluarsa, hapus lalu coba insert ulang
+        //             DB::connection('pgsql')->table('process_lock')
+        //                 ->where('process_name', 'data_update')
+        //                 ->delete();
+
+        //             $lockInserted = DB::connection('pgsql')->table('process_lock')
+        //                 ->insertOrIgnore([
+        //                     'process_name' => 'data_update',
+        //                     'locked_at' => now(),
+        //                     'ip_address' => request()->ip(),
+        //                 ]);
+
+        //             if (!$lockInserted) {
+        //                 // Jika tetap gagal mendapatkan lock, lanjutkan ke pengecekan temp_data_ajax
+        //                 Log::info('Lock tetap aktif, mengarah ke temp_data_ajax.');
+        //                 $tempData = DB::connection('pgsql')->table('temp_data_ajax')->first();
+        //                 return $tempData ? DB::connection('pgsql')->table('temp_data_ajax')->get() : null;
+        //             }
+
+        //             Log::info('Lock lama dihapus dan dibuat lock baru oleh: ' . request()->ip());
+        //         } else {
+        //             // Jika lock masih aktif, arahkan ke pengecekan temp_data_ajax
+        //             Log::info('Sedang berlangsung proses data update oleh ' . $lockedBy);
+        //             $tempData = DB::connection('pgsql')->table('temp_data_ajax')->first();
+        //             return $tempData ? DB::connection('pgsql')->table('temp_data_ajax')->get() : null;
+        //         }
+        //     }
+        // }
 
         /* MEMULAI PROSES PEMBAHARUAN DATA */
         try {
@@ -175,32 +223,71 @@ class Patient extends Model
             ");
 
             $data_batch = [];
+            $valid_time = now()->subSeconds(120); // Usia data 120 detik.
 
             // Simpan ke tabel temp_data_ajax di pgsql.
-            foreach ($patients_data as $data) {                
-                $data_batch[] = [
-                    'ServiceUnitName' => $data->ServiceUnitName,
-                    'BedCode' => $data->BedCode,
-                    'MedicalNo' => $data->MedicalNo,
-                    'PatientName' => $data->PatientName,
-                    'CustomerType' => $data->CustomerType,
-                    'RencanaPulang' => $data->RencanaPulang,
-                    'CatRencanaPulang' => $data->CatRencanaPulang,
-                    'Keperawatan' => $data->Keperawatan,
-                    'TungguJangdik' => $data->TungguJangdik,
-                    'TungguFarmasi' => $data->TungguFarmasi,
-                    'Keterangan' => $data->Keterangan,
-                    'Billing' => $data->Billing,
-                    'Bayar' => $data->Bayar,
-                    'BolehPulang' => $data->BolehPulang,
-                    'created_at' => now(),
-                    'updated_at' => now(),
-                    'update_by' => request()->ip(),
-                ];                
+            foreach ($patients_data as $data) {
+                // Untuk mencegah duplikasi data.
+                $exists = DB::connection('pgsql')->table('temp_data_ajax')
+                        ->whereExists(function ($query) use ($data, $valid_time) {
+                            $query->select(DB::raw(1))
+                                ->from('temp_data_ajax')
+                                ->where('ServiceUnitName', $data->ServiceUnitName)
+                                ->where('MedicalNo', $data->MedicalNo)
+                                ->where('BedCode', $data->BedCode)
+                                ->where('updated_at', '>=', $valid_time); // Cek apakah masih valid.
+                        })->exists();
+
+                        Log::info('Valid time: ' . $valid_time);
+
+                if(!$exists) {
+                    $data_batch[] = [
+                        'ServiceUnitName' => $data->ServiceUnitName,
+                        'BedCode' => $data->BedCode,
+                        'MedicalNo' => $data->MedicalNo,
+                        'PatientName' => $data->PatientName,
+                        'CustomerType' => $data->CustomerType,
+                        'RencanaPulang' => $data->RencanaPulang,
+                        'CatRencanaPulang' => $data->CatRencanaPulang,
+                        'Keperawatan' => $data->Keperawatan,
+                        'TungguJangdik' => $data->TungguJangdik,
+                        'TungguFarmasi' => $data->TungguFarmasi,
+                        'Keterangan' => $data->Keterangan,
+                        'Billing' => $data->Billing,
+                        'Bayar' => $data->Bayar,
+                        'BolehPulang' => $data->BolehPulang,
+                        'created_at' => now(),
+                        'updated_at' => now(),
+                        'update_by' => request()->ip(),
+                    ];
+                }
             }
 
+            // Simpan ke tabel temp_data_ajax di pgsql.
+            // foreach ($patients_data as $data) {                
+            //     $data_batch[] = [
+            //         'ServiceUnitName' => $data->ServiceUnitName,
+            //         'BedCode' => $data->BedCode,
+            //         'MedicalNo' => $data->MedicalNo,
+            //         'PatientName' => $data->PatientName,
+            //         'CustomerType' => $data->CustomerType,
+            //         'RencanaPulang' => $data->RencanaPulang,
+            //         'CatRencanaPulang' => $data->CatRencanaPulang,
+            //         'Keperawatan' => $data->Keperawatan,
+            //         'TungguJangdik' => $data->TungguJangdik,
+            //         'TungguFarmasi' => $data->TungguFarmasi,
+            //         'Keterangan' => $data->Keterangan,
+            //         'Billing' => $data->Billing,
+            //         'Bayar' => $data->Bayar,
+            //         'BolehPulang' => $data->BolehPulang,
+            //         'created_at' => now(),
+            //         'updated_at' => now(),
+            //         'update_by' => request()->ip(),
+            //     ];                
+            // }
+
             if(!empty($data_batch)) {
-                DB::connection('pgsql')->table('temp_data_ajax')->truncate();
+                // DB::connection('pgsql')->table('temp_data_ajax')->truncate();
 
                 DB::connection('pgsql')->table('temp_data_ajax')->insert($data_batch);
             }
@@ -210,6 +297,10 @@ class Patient extends Model
             DB::connection('pgsql')->rollBack();
             Log::error('Error dalam proses data: ' . $e->getMessage());
         } finally {
+            // DB::connection('pgsql')->table('process_lock')->where('process_name', 'data_update')->delete();
+
+            // return DB::connection('pgsql')->table('temp_data_ajax')->get();
+
             $updatedData = DB::connection('pgsql')->table('temp_data_ajax')->get();
 
             DB::connection('pgsql')->table('process_lock')->where('process_name', 'data_update')->delete();
