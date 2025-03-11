@@ -17,12 +17,12 @@ class RanapController extends Controller
 {
 
     private function isDataExpired($data) {
-        $expirationTime = 120;
+        $expirationTime = 2;
         $updateAt = Carbon::parse($data->updated_at);
-        $expired = $updateAt->diffInSeconds(now());
+        $expired = $updateAt->diffInMinutes(now());
         $ip = $data->update_by;
         Log::info("UpdateAt: " . $updateAt . " by " . $ip);    
-        $isExpired = $expired > $expirationTime;
+        $isExpired = $expired >= $expirationTime;
         Log::info("Expired? " . $isExpired);
         Log::info("Validasi data: " . ($isExpired ? 'Kadaluarsa pada: ' . $expired : 'Masih valid'));
 
@@ -53,8 +53,8 @@ class RanapController extends Controller
         // Cek apakah data sudah expired.
         if (!$data || $expiredData) {
             // Data expired, hapus data lama lalu ambil data baru.
-            DB::connection('pgsql')->table('temp_data_ajax')->truncate();
-            Log::info('Truncate temp_data_ajax pada: ' . now());
+            // DB::connection('pgsql')->table('temp_data_ajax')->truncate();
+            // Log::info('Truncate temp_data_ajax pada: ' . now());
             Patient::getPatientData();
             Log::info('getPatientData dipanggil pada: ' . now());
             $data = DB::connection('pgsql')->table('temp_data_ajax')->get();
