@@ -166,37 +166,48 @@ $(document).ready(function() {
                 } else {
                     console.log('response is null.');
                     
-                    // let countdown = RETRY_INTERVAL/1000;
+                    let countdown = RETRY_INTERVAL/1000;
                     
-                    // // Menampilkan notifikasi pertama kali.
-                    // let SwalInstance = Swal.fire({
-                    //     icon: 'info',
-                    //     title: `Data Update`,
-                    //     html: `Mencoba memperbarui dalam ${countdown} detik...`,
-                    //     timer: 10000,
-                    //     showConfirmButton: false
-                    // });
+                    // Menampilkan notifikasi pertama kali.
+                    Swal.fire({
+                        icon: 'info',
+                        title: 'Data Update',
+                        html: `Mencoba memperbarui dalam <b>${countdown}</b> detik...`,
+                        timer: RETRY_INTERVAL,
+                        showConfirmButton: false,
+                        allowOutsideClick: false,
+                        didOpen: () => {
+                            const swalContent = Swal.getHtmlContainer();
+                            let interval = setInterval(() => {
+                                countdown--;
+                                if (swalContent) {
+                                    swalContent.innerHTML = `Mencoba memperbarui dalam <b>${countdown}</b> detik...`;
+                                }
+                                if (countdown <= 0) {
+                                    clearInterval(interval);
+                                }
+                            }, 1000);
+                        }
+                    }).then(() => {
+                        let data = updatePatientCard(); // Mencoba menarik data lagi
 
-                    // // Interval untuk update countdown.
-                    // let interval = setInterval(() => {
-                    //     countdown --;
-                    //     if (Swal.isVisible()) {
-                    //         SwalInstance.update({
-                    //             html: `Mencoba memperbarui dalam ${countdown} detik...`
-                    //         });
-                    //     }
+                        if (data === null) {
+                            retryCount++;
+                            console.log(`Percobaan ${retryCount}: Data masih null.`);
 
-                    //     if (countdown <= 0) {
-                    //         clearInterval(interval);
-                    //     }
-                    // }, 1000);
-
-                    // if (retry < MAX_RETRY_COUNT) {
-                    //     console.log("Mencoba ulang ke-" + retry);
-                    //     setTimeout(() => checkDataLockAndUpdate(retry + 1), RETRY_INTERVAL);
-                    // } else {
-                    //     setTimeout(() => updatePatientCard(), REST_INTERVAL);
-                    // }
+                            if (retryCount < MAX_RETRY_COUNT) {
+                                setTimeout(() => {
+                                    countdown = RETRY_INTERVAL / 1000; // Reset countdown
+                                    updatePatientCard(); // Coba lagi
+                                }, RETRY_INTERVAL);
+                            } else {
+                                console.log("Gagal 3 kali. Menunggu request berikutnya.");
+                            }
+                        } else {
+                            console.log("Data berhasil diperbarui:", data);
+                            updatePatientCard();
+                        }
+                    });
                 }
             },
             complete: function() {
@@ -341,66 +352,66 @@ $(document).ready(function() {
         }
     }
 
-    function checkDataLockAndUpdate(retry = 0) {
-        $.ajax({
-            url: "/ajax/process", // Route API untuk status terkunci atau tidak.
-            type: "GET",
-            success: function(response) {
-                if (response.status === "locked") {
-                    console.log("Menampilkan notifikasi.");
+    // function checkDataLockAndUpdate(retry = 0) {
+    //     $.ajax({
+    //         url: "/ajax/process", // Route API untuk status terkunci atau tidak.
+    //         type: "GET",
+    //         success: function(response) {
+    //             if (response.status === "locked") {
+    //                 console.log("Menampilkan notifikasi.");
 
-                    let countdown = retry < MAX_RETRY_COUNT ? RETRY_INTERVAL/1000 : REST_INTERVAL/1000;
+    //                 let countdown = retry < MAX_RETRY_COUNT ? RETRY_INTERVAL/1000 : REST_INTERVAL/1000;
                     
-                    // Menampilkan notifikasi pertama kali.
-                    let SwalInstance = Swal.fire({
-                        icon: 'info',
-                        title: `${response.message}`,
-                        html: `Mencoba memperbarui dalam ${countdown} detik...`,
-                        timer: 10000,
-                        showConfirmButton: false
-                    });
+    //                 // Menampilkan notifikasi pertama kali.
+    //                 let SwalInstance = Swal.fire({
+    //                     icon: 'info',
+    //                     title: `${response.message}`,
+    //                     html: `Mencoba memperbarui dalam ${countdown} detik...`,
+    //                     timer: 10000,
+    //                     showConfirmButton: false
+    //                 });
 
-                    // Interval untuk update countdown.
-                    let interval = setInterval(() => {
-                        countdown --;
-                        if (Swal.isVisible()) {
-                            SwalInstance.update({
-                                html: `Mencoba memperbarui dalam ${countdown} detik...`
-                            });
-                        }
+    //                 // Interval untuk update countdown.
+    //                 let interval = setInterval(() => {
+    //                     countdown --;
+    //                     if (Swal.isVisible()) {
+    //                         SwalInstance.update({
+    //                             html: `Mencoba memperbarui dalam ${countdown} detik...`
+    //                         });
+    //                     }
 
-                        if (countdown <= 0) {
-                            clearInterval(interval);
-                        }
-                    }, 1000);
+    //                     if (countdown <= 0) {
+    //                         clearInterval(interval);
+    //                     }
+    //                 }, 1000);
 
-                    if (retry < MAX_RETRY_COUNT) {
-                        console.log("Mencoba ulang ke-" + retry);
-                        setTimeout(() => checkDataLockAndUpdate(retry + 1), RETRY_INTERVAL);
-                    } else {
-                        setTimeout(() => updatePatientCard(), REST_INTERVAL);
-                    }
-                }
+    //                 if (retry < MAX_RETRY_COUNT) {
+    //                     console.log("Mencoba ulang ke-" + retry);
+    //                     setTimeout(() => checkDataLockAndUpdate(retry + 1), RETRY_INTERVAL);
+    //                 } else {
+    //                     setTimeout(() => updatePatientCard(), REST_INTERVAL);
+    //                 }
+    //             }
 
-                if (response.status === "success") {
-                    console.log("Data sudah terupdate.");
-                    updatePatientCard();
-                }
-            },
-            error: function() {
-                console.error("Koneksi ke API mengalami error");
-                updatePatientCard();
-            }
-        });
-    }
+    //             if (response.status === "success") {
+    //                 console.log("Data sudah terupdate.");
+    //                 updatePatientCard();
+    //             }
+    //         },
+    //         error: function() {
+    //             console.error("Koneksi ke API mengalami error");
+    //             updatePatientCard();
+    //         }
+    //     });
+    // }
 
     updatePatientCard();
     updateTime();
     updateCleaningTime();
-    checkDataLockAndUpdate();
+    // checkDataLockAndUpdate();
     
     setInterval(updatePatientCard, UPDATE_INTERVAL);
     setInterval(updateTime, TIME_UPDATE_INTERVAL);
     setInterval(updateCleaningTime, TIME_UPDATE_INTERVAL);
-    setInterval(checkDataLockAndUpdate, LOCK_CHECK_INTERVAL);
+    // setInterval(checkDataLockAndUpdate, LOCK_CHECK_INTERVAL);
 });
