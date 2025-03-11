@@ -15,37 +15,32 @@ use Illuminate\Support\Facades\DB;
 
 class RanapController extends Controller
 {
+
+    private function isDataExpired($data) {
+        $expirationTime = 120;
+        $updateAt = Carbon::parse($data->updated_at);
+        $expired = $updateAt->diffInSeconds(now());
+        $ip = $data->update_by;
+        Log::info("UpdateAt: " . $updateAt . " by " . $ip);    
+        $isExpired = $expired > $expirationTime;
+        Log::info("Expired? " . $isExpired);
+        Log::info("Validasi data: " . ($isExpired ? 'Kadaluarsa pada: ' . $expired : 'Masih valid'));
+
+        return $isExpired;
+    }
     // Fungsi untuk menentukan data di temp_data_ajax expired atau tidak.
-    
     // private function isDataExpired($data) {
-    //     $expirationTime = 120;
     //     $updateAt = Carbon::parse($data->updated_at);
-    //     $expired = $updateAt->diffInSeconds(now());
+    //     $expirationTime = $updateAt->addMinutes(2);
+    //     $isExpired = now()->gt($expirationTime);
     //     $ip = $data->update_by;
-    //     Log::info("UpdateAt: " . $updateAt . " by " . $ip);    
-    //     $isExpired = $expired > $expirationTime;
+
+    //     Log::info("UpdateAt: " . $updateAt . " by " . $ip);       
     //     Log::info("Expired? " . $isExpired);
-    //     Log::info("Validasi data: " . ($isExpired ? 'Kadaluarsa pada: ' . $expired : 'Masih valid'));
+    //     Log::info("Validasi data: " . ($isExpired ? 'Kadaluarsa pada: ' . $expirationTime : 'Masih valid'));
 
     //     return $isExpired;
     // }
-    
-    private function isDataExpired($data) {
-        if (!$data) {
-            return true;
-        } else {
-            $updateAt = Carbon::parse($data->updated_at);
-            $expirationTime = $updateAt->copy()->addMinutes(2);
-            $isExpired = now()->gt($expirationTime);
-            $ip = $data->update_by;
-
-            Log::info("UpdateAt: " . $updateAt . " by " . $ip);       
-            Log::info("Expired? " . $isExpired);
-            Log::info("Validasi data: " . ($isExpired ? 'Kadaluarsa pada: ' . $expirationTime : 'Masih valid'));
-
-            return $isExpired;
-        }
-    }
     
     public function getPatientDataAjax(Request $request) {
         $data = DB::connection('pgsql')->table('temp_data_ajax')->first();
@@ -56,22 +51,14 @@ class RanapController extends Controller
         $serviceUnit = $this->getServiceUnit($unit);
 
         // Cek apakah data sudah expired.
-        if ($expiredData) {
+        if (!$data || $expiredData) {
             // Data expired, hapus data lama lalu ambil data baru.
-            // DB::connection('pgsql')->table('temp_data_ajax')->truncate();
-            // Log::info('Truncate temp_data_ajax pada: ' . now());
-
-            $lockExists = DB::connection('pgsql')->table('process_lock')
-                ->where('process_name', 'data_update')
-                ->exists();
-
-            if ($lockExists) {
-                $data = DB::connection('pgsql')->table('temp_data_ajax')->get();
-                Log::info('Ada proses update. Mengembalikan data yang ada dulu.');
-            } else {
-                Patient::getPatientData();
-                $data = DB::connection('pgsql')->table('temp_data_ajax')->get();
-            }
+            DB::connection('pgsql')->table('temp_data_ajax')->truncate();
+            Log::info('Truncate temp_data_ajax pada: ' . now());
+            Patient::getPatientData();
+            Log::info('getPatientData dipanggil pada: ' . now());
+            $data = DB::connection('pgsql')->table('temp_data_ajax')->get();
+            Log::info('Insert data baru ke temp_data_ajax pada: ' . now());
         } else {
             // Data tidak expired, ambil data yang sudah ada.
             $data = DB::connection('pgsql')->table('temp_data_ajax')->get();
@@ -128,7 +115,7 @@ class RanapController extends Controller
                 });
             }
         }
-
+        
         /* UNTUK MEMASTIKAN IP USER DAN UNITNYA BENAR. */
         Log::info('IP client: ' . $ipAddress);
         Log::info('unit IP address: ' . $unit);
@@ -146,10 +133,17 @@ class RanapController extends Controller
             $customerTypeIcons = $customerTypeIcon[$patient->CustomerType] ?? null;
             $billingDate = Carbon::parse($patient->Billing)->format('d/m/Y H:i');
 
+
             $patient -> billingDate = $billingDate;
             $patient -> customerTypeIcons = $customerTypeIcons;
 
+
             $column = $this-> mapStatusToColumn($status); // Mapping status ke kolom tabel.
+
+            $patient -> customerTypeIcons = '/molang_pasien' . $customerTypeIcons;
+
+            // Mapping status ke kolom tabel.
+            $column = $this-> mapStatusToColumn($status);
 
             // Cek apakah entri pasien sudah ada di tabel patient_transitions
             $transition = patient_transition::firstOrCreate(
@@ -201,14 +195,14 @@ class RanapController extends Controller
             if ($status == 'Tunggu Jangdik') {
                 foreach ($orderTypes as $orderType) {
                     if (str_contains($patient->TungguJangdik, $orderType->code_prefix)) {
-                        $patient->order_icon = $orderType->icon_path;
+                        $patient->order_icon = '/molang_pasien' . $orderType->icon_path;
                         break;
                     }
                 }
             } elseif ($status == 'Tunggu Farmasi') {
                 foreach ($orderTypes as $orderType) {
                     if (str_contains($patient->TungguFarmasi, $orderType->code_prefix)) {
-                        $patient->order_icon = $orderType->icon_path;
+                        $patient->order_icon = '/molang_pasien' . $orderType->icon_path;
                         break;
                     }
                 }
