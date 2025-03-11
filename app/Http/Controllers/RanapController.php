@@ -95,6 +95,16 @@ class RanapController extends Controller
                 $beds = $beds->filter(function ($bed) use ($allowedWards) {
                     return in_array($bed->ServiceUnitName, $allowedWards);
                 });
+            } elseif ($unit == 'FARMASI RANAP') {
+                $allowedWards = ['TJAN KHEE SWAN BARAT', 'TJAN KHEE SWAN TIMUR', 'RUANG ASA', 'KWEE HAN TIONG', 'PERAWATAN IBU & ANAK 1', 'PERAWATAN IBU & ANAK 2'];
+
+                $patients = $patients->filter(function ($patient) use ($allowedWards) {
+                    return in_array($patient->ServiceUnitName, $allowedWards);
+                });
+    
+                $beds = $beds->filter(function ($bed) use ($allowedWards) {
+                    return in_array($bed->ServiceUnitName, $allowedWards);
+                });
             } else {
                 $patients = $patients->filter(function ($patient) use ($serviceUnit) {
                     return $patient->ServiceUnitName == $serviceUnit;
@@ -105,7 +115,7 @@ class RanapController extends Controller
                 });
             }
         }
-
+        
         /* UNTUK MEMASTIKAN IP USER DAN UNITNYA BENAR. */
         Log::info('IP client: ' . $ipAddress);
         Log::info('unit IP address: ' . $unit);
