@@ -351,7 +351,18 @@ $(document).ready(function() {
                 if (response.status === "locked") {
                     console.log("Menampilkan notifikasi.");
 
+
                     let countdown = retry < MAX_RETRY_COUNT ? RETRY_INTERVAL/1000 : REST_INTERVAL/1000;
+
+    function checkDataLockAndUpdate(retry = 0) {
+        $.ajax({
+            url: "/molang_pasien/ajax/process", // Route API untuk status terkunci atau tidak.
+            type: "GET",
+            success: function(response) {
+                if (response.status === "locked") {
+                    console.log("Menampilkan notifikasi.");
+
+                    // let countdown = retry < MAX_RETRY_COUNT ? RETRY_INTERVAL/1000 : REST_INTERVAL/1000;
                     
                     // Menampilkan notifikasi pertama kali.
                     let SwalInstance = Swal.fire({
