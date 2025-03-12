@@ -43,6 +43,8 @@ class RanapController extends Controller
 
         // Cek apakah data sudah expired.
         if (!$data || $expiredData) {
+            DB::connection('pgsql')->table('temp_data_ajax')->truncate();
+            Log::info('Data lama sudah dihapus. Memanggil getPatientData');
             Patient::getPatientData();
             Log::info('Tabel temp_data_ajax null. Memanggil getPatientData ');
             $data = DB::connection('pgsql')->table('temp_data_ajax')->get();
