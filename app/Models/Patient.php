@@ -27,42 +27,35 @@ class Patient extends Model
     {
         $max = now()->subMinutes(2);
 
-        // Hapus lock lama jika expired
+        // Hapus lock lama jika ada (karena crash atau error)
         DB::connection('pgsql')->table('process_lock')
             ->where('process_name', 'data_update')
             ->where('locked_at', '<=', $max)
             ->delete();
 
-        try {
-            // Coba memasukkan lock baru, tetapi jika sudah ada, skip (tanpa error)
-            DB::connection('pgsql')->insert("
-                INSERT INTO process_lock (process_name, locked_at, ip_address)
-                VALUES (?, ?, ?)
-                ON CONFLICT (process_name) DO NOTHING
-            ", ['data_update', now(), request()->ip()]);
+        $lockExists = DB::connection('pgsql')->table('process_lock')
+            ->where('process_name', 'data_update')
+            ->where('locked_at', '>', $max)
+            ->exists();
 
-            // Cek apakah kita berhasil memasukkan lock (jika tidak, berarti ada yang lebih dulu)
-            $lockExists = DB::connection('pgsql')->table('process_lock')
-                ->where('process_name', 'data_update')
-                ->where('locked_at', '>', $max)
-                ->exists();
+        Log::info('Cek apakah sudah ada lock: ' . json_encode($lockExists));
 
-            if ($lockExists) {
-                Log::info('Proses data update sedang berlangsung....');
-                return response()->json([
-                    'status' => 'locked',
-                    'message' => 'Data dalam proses update.'
-                ]);
-            }
-
-            Log::info('Lock dibuat pada: ' . now());
-        } catch (\Exception $e) {
-            Log::error('Gagal membuat lock: ' . $e->getMessage());
+        if ($lockExists) {
+            // Jika ada yang melakukan proses, hentikan eksekusi
+            Log::info('Proses data update sedang berlangsung....');
             return response()->json([
-                'status' => 'error',
-                'message' => 'Terjadi kesalahan dalam penguncian proses.',
-            ], 500);
+                'status' => 'locked',
+                'message' => 'Data dalam proses update.'
+            ]);
         }
+
+        // Tandai proses sedang berlangsung.
+        DB::connection('pgsql')->table('process_lock')->insert([
+            'process_name' => 'data_update',
+            'locked_at' => now(),
+            'ip_address' => request()->ip(), // IP user yang melakukan lock
+        ]);
+        Log::info('Lock dibuat pada: ' . now());
 
         /* MEMULAI PROSES PEMBAHARUAN DATA */
         try {
@@ -215,9 +208,6 @@ class Patient extends Model
             }
 
             if(!empty($data_batch)) {
-                // DB::connection('pgsql')->table('temp_data_ajax')->truncate();
-                // Log::info('Data lama sudah dihapus.');
-
                 DB::connection('pgsql')->table('temp_data_ajax')->insert($data_batch);
             }
 
