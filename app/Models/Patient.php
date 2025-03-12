@@ -215,8 +215,8 @@ class Patient extends Model
             }
 
             if(!empty($data_batch)) {
-                DB::connection('pgsql')->table('temp_data_ajax')->truncate();
-                Log::info('Data lama sudah dihapus.');
+                // DB::connection('pgsql')->table('temp_data_ajax')->truncate();
+                // Log::info('Data lama sudah dihapus.');
 
                 DB::connection('pgsql')->table('temp_data_ajax')->insert($data_batch);
             }
