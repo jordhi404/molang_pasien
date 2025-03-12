@@ -39,7 +39,7 @@ class Patient extends Model
             ->exists();
 
         Log::info('Cek apakah sudah ada lock: ' . json_encode($lockExists));
-
+      
         if ($lockExists) {
             // Jika ada yang melakukan proses, hentikan eksekusi
             Log::info('Proses data update sedang berlangsung....');
