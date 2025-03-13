@@ -14,7 +14,7 @@ $(document).ready(function() {
 
     function updatePatientCard() {
         $.ajax({
-            url: '/ajax/patients',
+            url: '/molang_pasien/ajax/patients',
             method: 'GET',
             timeout: AJAX_TIMEOUT,
             beforeSend: function() {
@@ -345,7 +345,7 @@ $(document).ready(function() {
 
     function checkDataLockAndUpdate(retry = 0) {
         $.ajax({
-            url: "/ajax/process", // Route API untuk status terkunci atau tidak.
+            url: "/molang_pasien/ajax/process", // Route API untuk status terkunci atau tidak.
             type: "GET",
             success: function(response) {
                 if (response.status === "locked") {
