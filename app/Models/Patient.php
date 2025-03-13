@@ -65,105 +65,90 @@ class Patient extends Model
                 // Ambil data dari sqlsrv.
                 $patients_data = DB::connection('sqlsrv')
                 -> select("
-                WITH Dashboard_CTE AS (
-                    SELECT DISTINCT 
-                        a.RegistrationNo,
-                        r.ServiceUnitName,
-                        a.BedCode,
-                        a.MedicalNo,
-                        a.PatientName,
-                        r.CustomerType,    
-                        RencanaPulang = CAST(cv.PlanDischargeDate AS VARCHAR) + ' ' + CAST(cv.PlanDischargeTime AS VARCHAR),
-                        CatRencanaPulang = cv.PlanDischargeNotes,                      
-                        TungguJangdik = 
-                            (SELECT TOP 1 TransactionNo 
-                            FROM PatientChargesHD
-                            WHERE VisitID=cv.VisitID 
-                            AND GCTransactionStatus<>'X121^999' 
-                            AND GCTransactionStatus IN ('X121^001')
-                            AND HealthcareServiceUnitID IN (82,83,99,138,140)
-                            ORDER BY TestOrderID ASC),
-                        Keperawatan =
-                            (SELECT TOP 1 TransactionNo 
-                            FROM PatientChargesHD
-                            WHERE VisitID=cv.VisitID 
-                            AND GCTransactionStatus<>'X121^999' 
-                            AND GCTransactionStatus IN ('X121^001')
-                            AND HealthcareServiceUnitID NOT IN (82,83,99,138,140,101,137)
-                            ORDER BY TestOrderID ASC),
-                        TungguFarmasi = 
-                            (SELECT TOP 1 TransactionNo 
-                            FROM PatientChargesHD
-                            WHERE VisitID=cv.VisitID 
-                            AND GCTransactionStatus<>'X121^999' 
-                            AND GCTransactionStatus IN ('X121^001')
-                            AND HealthcareServiceUnitID IN (101,137)
-                            ORDER BY TestOrderID ASC),
-                        RegistrationStatus = 
-                            (SELECT TOP 1 IsLockDownNEW
-                            FROM RegistrationStatusLog 
-                            WHERE RegistrationID = a.RegistrationID 
-                            ORDER BY ID DESC),
-                        OutStanding =
-                            (SELECT COUNT(DISTINCT GCTransactionStatus) 
-                            FROM PatientChargesHD 
-                            WHERE VisitID=cv.VisitID 
-                            AND GCTransactionStatus IN ('X121^001')),
-                        Billing =
-                            (SELECT MAX(CreatedDate) 
-                                FROM PatientBill 
-                                WHERE RegistrationID = cv.RegistrationID 
-                                    AND GCTransactionStatus <> 'X121^999' 
-                                    AND CreatedDate IS NOT NULL),
-                        Bayar =
-                            (SELECT MAX(CreatedDate) 
-                                FROM PatientPaymentHd 
-                                WHERE RegistrationID = cv.RegistrationID 
-                                    AND GCTransactionStatus <> 'X121^999' 
-                                    AND CreatedDate IS NOT NULL),
-                        BolehPulang = 
-                            (SELECT MAX(PrintedDate) 
-                                FROM ReportPrintLog 
-                                WHERE ReportID = 7012 
-                                    AND ReportParameter = CONCAT('RegistrationID = ', r.RegistrationID))
-                    FROM vBed a
-                    LEFT JOIN vPatient p ON p.MRN = a.MRN
-                    LEFT JOIN PatientNotes pn ON pn.MRN = a.MRN
-                    LEFT JOIN vRegistration r ON r.RegistrationID = a.RegistrationID
-                    LEFT JOIN ConsultVisit cv ON cv.VisitID = r.VisitID
-                    LEFT JOIN StandardCode sc ON sc.StandardCodeID = cv.GCPlanDischargeNotesType
-                    LEFT JOIN PatientVisitNote pvn ON pvn.VisitID = cv.VisitID 
-                        AND pvn.GCNoteType IN ('X312^001', 'X312^002', 'X312^003', 'X312^004', 'X312^005', 'X312^006')
-                    WHERE a.IsDeleted = 0 
-                    AND a.RegistrationID IS NOT NULL
-                    AND cv.PlanDischargeDate IS NOT NULL
-                    AND r.GCRegistrationStatus <> 'X020^006'
+                WITH PatientCharges AS (
+                    SELECT 
+                        VisitID,
+                        MAX(CASE WHEN HealthcareServiceUnitID IN (82,83,99,138,140) THEN TransactionNo END) AS TungguJangdik,
+                        MAX(CASE WHEN HealthcareServiceUnitID NOT IN (82,83,99,138,140,101,137) THEN TransactionNo END) AS Keperawatan,
+                        MAX(CASE WHEN HealthcareServiceUnitID IN (101,137) THEN TransactionNo END) AS TungguFarmasi,
+                        COUNT(DISTINCT GCTransactionStatus) AS OutStanding
+                    FROM PatientChargesHD
+                    WHERE GCTransactionStatus<>'X121^999' 
+                        AND GCTransactionStatus IN ('X121^001')
+                    GROUP BY VisitID
+                ),
+                LatestStatusLog AS (
+                    SELECT 
+                        RegistrationID,
+                        IsLockDownNEW
+                    FROM (
+                        SELECT 
+                            RegistrationID, 
+                            IsLockDownNEW, 
+                            ROW_NUMBER() OVER (PARTITION BY RegistrationID ORDER BY ID DESC) AS rn
+                        FROM RegistrationStatusLog
+                    ) AS subquery
+                    WHERE rn = 1
+                ),
+                LatestBilling AS (
+                    SELECT 
+                        RegistrationID,
+                        MAX(CreatedDate) AS Billing
+                    FROM PatientBill
+                    WHERE GCTransactionStatus <> 'X121^999'
+                    GROUP BY RegistrationID
+                ),
+                LatestPayment AS (
+                    SELECT 
+                        RegistrationID,
+                        MAX(CreatedDate) AS Bayar
+                    FROM PatientPaymentHd
+                    WHERE GCTransactionStatus <> 'X121^999'
+                    GROUP BY RegistrationID
+                ),
+                LatestDischarge AS (
+                    SELECT 
+                        ReportID,
+                        MAX(PrintedDate) AS BolehPulang
+                    FROM ReportPrintLog
+                    WHERE ReportID = 7012 
+                    GROUP BY ReportID
                 )
-                SELECT 
-                    ServiceUnitName,
-                    BedCode,
-                    MedicalNo,
-                    PatientName,
-                    CustomerType,
-                    RencanaPulang,
-                    CatRencanaPulang,
-                    Keperawatan,
-                    TungguJangdik,
-                    TungguFarmasi,
-                    CASE
-                        WHEN Keperawatan IS NOT NULL AND TungguJangdik IS NULL AND TungguFarmasi IS NOT NULL THEN 'Tunggu Keperawatan'
-                        WHEN Keperawatan IS NOT NULL AND TungguJangdik IS NULL AND TungguFarmasi IS NULL THEN 'Tunggu Keperawatan'
-                        WHEN TungguJangdik IS NOT NULL AND Keperawatan IS NOT NULL AND TungguFarmasi IS NOT NULL THEN 'Tunggu Jangdik'
-                        WHEN TungguFarmasi IS NOT NULL AND Keperawatan IS NULL AND TungguJangdik IS NULL THEN 'Tunggu Farmasi'
-                        WHEN RegistrationStatus = 0 AND OutStanding > 0 AND Billing IS NULL AND Bayar IS NULL THEN 'Billing'
-                        WHEN RegistrationStatus = 1 AND OutStanding = 0 AND Billing IS NULL AND Bayar IS NULL THEN 'Billing'
-                        WHEN RegistrationStatus = 1 AND OutStanding = 0 AND Billing IS NOT NULL AND Bayar IS NULL THEN 'Billing'
-                        WHEN RegistrationStatus = 1 AND OutStanding = 0 AND Billing IS NOT NULL AND Bayar IS NOT NULL THEN 'Bayar/Piutang'
-                    END AS Keterangan,
-                    Billing,
-                    Bayar,
-                    BolehPulang
-                FROM Dashboard_CTE
+                SELECT DISTINCT 
+                    r.ServiceUnitName,
+                    a.BedCode,
+                    a.MedicalNo,
+                    a.PatientName,
+                    r.CustomerType,
+                    cv.PlanDischargeDate,
+                    cv.PlanDischargeTime,    
+                    cv.PlanDischargeNotes AS CatRencanaPulang,                      
+                    pc.TungguJangdik,
+                    pc.Keperawatan,
+                    pc.TungguFarmasi,
+                    ls.IsLockDownNEW AS RegistrationStatus,
+                    pc.OutStanding,
+                    lb.Billing,
+                    lp.Bayar,
+                    ld.BolehPulang
+                FROM vBed a
+                LEFT JOIN vPatient p ON p.MRN = a.MRN
+                LEFT JOIN PatientNotes pn ON pn.MRN = a.MRN
+                LEFT JOIN vRegistration r ON r.RegistrationID = a.RegistrationID
+                LEFT JOIN ConsultVisit cv ON cv.VisitID = r.VisitID
+                LEFT JOIN StandardCode sc ON sc.StandardCodeID = cv.GCPlanDischargeNotesType
+                LEFT JOIN PatientVisitNote pvn 
+                    ON pvn.VisitID = cv.VisitID 
+                    AND pvn.GCNoteType IN ('X312^001', 'X312^002', 'X312^003', 'X312^004', 'X312^005', 'X312^006')
+                LEFT JOIN PatientCharges pc ON pc.VisitID = cv.VisitID
+                LEFT JOIN LatestStatusLog ls ON ls.RegistrationID = a.RegistrationID
+                LEFT JOIN LatestBilling lb ON lb.RegistrationID = cv.RegistrationID
+                LEFT JOIN LatestPayment lp ON lp.RegistrationID = cv.RegistrationID
+                LEFT JOIN LatestDischarge ld ON ld.ReportID = r.RegistrationID
+                WHERE a.IsDeleted = 0 
+                AND a.RegistrationID IS NOT NULL
+                AND cv.PlanDischargeDate IS NOT NULL
+                AND r.GCRegistrationStatus <> 'X020^006';
             ");
 
             $data_batch = [];
@@ -171,6 +156,33 @@ class Patient extends Model
 
             // Simpan ke tabel temp_data_ajax di pgsql.
             foreach ($patients_data as $data) {
+                $planDate = $data->PlanDischargeDate ?? null;
+                $planTime = $data->PlanDischargeTime ?? null;
+                $rencanaPulang = null;
+
+                if ($planDate && $planTime) {
+                    $rencanaPulang = Carbon::parse($planDate)->format('Y-m-d') . ' ' . trim($planTime);
+                }
+
+                $keteranganMapping = [
+                    [$data->Keperawatan && !$data->TungguJangdik && $data->TungguFarmasi, 'Tunggu Keperawatan'],
+                    [$data->Keperawatan && !$data->TungguJangdik && !$data->TungguFarmasi, 'Tunggu Keperawatan'],
+                    [$data->TungguJangdik && $data->Keperawatan && $data->TungguFarmasi, 'Tunggu Jangdik'],
+                    [$data->TungguFarmasi && !$data->Keperawatan && !$data->TungguJangdik, 'Tunggu Farmasi'],
+                    [$data->RegistrationStatus == 0 && $data->OutStanding > 0 && !$data->Billing && !$data->Bayar, 'Billing'],
+                    [$data->RegistrationStatus == 1 && $data->OutStanding == 0 && !$data->Billing && !$data->Bayar, 'Billing'],
+                    [$data->RegistrationStatus == 1 && $data->OutStanding == 0 && $data->Billing && !$data->Bayar, 'Billing'],
+                    [$data->RegistrationStatus == 1 && $data->OutStanding == 0 && $data->Billing && $data->Bayar, 'Bayar/Piutang'],
+                ];
+
+                $keterangan = null;
+                foreach ($keteranganMapping as [$condition, $result]) {
+                    if ($condition) {
+                        $keterangan = $result;
+                        break;
+                    }
+                }
+
                 // Untuk mencegah duplikasi data.
                 $exists = DB::connection('pgsql')->table('temp_data_ajax')
                         ->whereExists(function ($query) use ($data, $valid_time) {
@@ -182,7 +194,7 @@ class Patient extends Model
                                 ->where('updated_at', '>=', $valid_time); // Cek apakah masih valid.
                         })->exists();
 
-                        Log::info('Valid time: ' . $valid_time);
+                Log::info('Valid time: ' . $valid_time);
 
                 if(!$exists) {
                     $data_batch[] = [
@@ -191,12 +203,12 @@ class Patient extends Model
                         'MedicalNo' => $data->MedicalNo,
                         'PatientName' => $data->PatientName,
                         'CustomerType' => $data->CustomerType,
-                        'RencanaPulang' => $data->RencanaPulang,
+                        'RencanaPulang' => $rencanaPulang,
                         'CatRencanaPulang' => $data->CatRencanaPulang,
                         'Keperawatan' => $data->Keperawatan,
                         'TungguJangdik' => $data->TungguJangdik,
                         'TungguFarmasi' => $data->TungguFarmasi,
-                        'Keterangan' => $data->Keterangan,
+                        'Keterangan' => $keterangan,
                         'Billing' => $data->Billing,
                         'Bayar' => $data->Bayar,
                         'BolehPulang' => $data->BolehPulang,
