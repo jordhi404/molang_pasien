@@ -122,8 +122,8 @@
                             <th>BILLING</th>
                             <th>BAYAR/PIUTANG</th>
                             <th>CETAK SIP</th>                                                  	
-                            <th>PASIEN PULANG</th>                         	
-                            <th>RENCANA PULANG - PASIEN PULANG (hh:mm)</th>                         	
+                            <!-- <th>PASIEN PULANG</th>                         	 -->
+                            <th>RENCANA PULANG - CETAK SIP (hh:mm)</th>                         	
                         </tr>
                     </thead>
                     <tbody>
@@ -214,7 +214,7 @@
                                         <span> </span>
                                     @endif
                                 </td>                                                        	
-                                <td style="text-align: left;">
+                                <!-- <td style="text-align: left;">
                                     @if (!empty($row->RoomDischargeDateTime))
                                         <?php list($date, $time) = explode(' ', $row->RoomDischargeDateTime); ?>
                                             <div><span><img src="{{ asset('/Logo_img/calendar.png') }}" alt="calendar" style="horizontal-align: middle; margin-right: 5px; height: 15px; width: 15px"> {{ $date }}</span></div>
@@ -222,13 +222,19 @@
                                     @else
                                         <span> </span>
                                     @endif
-                                </td>                            	
-                                <td>
+                                </td>                            	 -->
+                                <!-- <td>
                                     <span><strong>{{ $row->rpul_roomclose }} - {{ $row->performancePercentage }}%</strong></span>
                                     <div class="chart-bar" id="chart-bar-{{ $row->MedicalNo }}">
                                         <canvas id="chart-{{ $row->MedicalNo }}" width="100" height="45"></canvas>
                                     </div>
-                                </td>                          
+                                </td>                           -->
+                                <td>
+                                    <span><strong>{{ $row->timeDiff }} - {{ $row->diffPercentage }}%</strong></span>
+                                    <div class="chart-bar" id="chart-bar-{{ $row->MedicalNo }}">
+                                        <canvas id="chart-{{ $row->MedicalNo }}" width="100" height="45"></canvas>
+                                    </div>
+                                </td> 
                             </tr>
                         @endforeach
                     </tbody>
@@ -255,7 +261,8 @@
             @foreach($data as $row) 
                 // Script untuk menggambar chart
                 var ctx = document.getElementById('chart-{{ $row->MedicalNo }}').getContext('2d');
-                var percentage = {{ $row->performancePercentage ?? 0 }};
+                // var percentage = {{ $row->performancePercentage ?? 0 }};
+                var percentage = {{ $row->diffPercentage ?? 0 }};
                 var myChart = new Chart(ctx, {
                     type: 'bar',
                     data: {

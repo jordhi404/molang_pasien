@@ -237,6 +237,33 @@ class RekapController extends Controller
             } else {
                 $patient->cetakDurationFormatted = 'Data bayar tidak ada';
             }
+
+            // Menghitung selisih waktu antara RencanaPulang dan BolehPulang
+            if ($patient->RencanaPulang && $patient->BolehPulang) {
+                $planTime = Carbon::parse($patient->RencanaPulang);
+                $bolehPulangTime = Carbon::createFromFormat('d/m/Y H:i', $patient->BolehPulang);
+            
+                // Calculate total minutes difference
+                $totalMinutes = max(0, $planTime->diffInMinutes($bolehPulangTime));
+            
+                // Convert to hours and minutes format HH:mm
+                $hours = floor($totalMinutes / 60);
+                $minutes = $totalMinutes % 60;
+                $timeDiff = sprintf('%02d:%02d', $hours, $minutes);
+            
+                // Calculate percentage against standard time (e.g., 2 hours = 120 minutes)
+                $standardTimeInMinutes = 60; // 1 hours
+                $diffPercentage = round(($totalMinutes / $standardTimeInMinutes) * 100);
+            
+                // Add these values to the patient object
+                $patient->timeDiff = $timeDiff;
+                $patient->diffPercentage = $diffPercentage;
+                $patient->diffColor = $totalMinutes > $standardTimeInMinutes ? 'red' : 'green';
+            } else {
+                $patient->timeDiff = '--:--';
+                $patient->diffPercentage = 0;
+                $patient->diffColor = 'gray';
+            }
         }
 
         $available_units = DB::connection('pgsql')
