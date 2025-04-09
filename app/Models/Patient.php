@@ -65,77 +65,63 @@ class Patient extends Model
                 // Ambil data dari sqlsrv.
                 $patients_data = DB::connection('sqlsrv')
                 -> select("
-                SELECT DISTINCT 
-                    r.ServiceUnitName,
-                    a.BedCode,
-                    a.MedicalNo,
-                    a.PatientName,
-                    r.CustomerType,    
-                    cv.PlanDischargeDate,
-                    cv.PlanDischargeTime,
-                    CatRencanaPulang = cv.PlanDischargeNotes,                      
-                    TungguJangdik = 
-                        (SELECT TOP 1 TransactionNo 
-                        FROM PatientChargesHD
-                        WHERE VisitID=cv.VisitID 
-                        AND GCTransactionStatus<>'X121^999' 
+                WITH PatientCharges AS (
+                    SELECT 
+                        VisitID,
+                        MAX(CASE WHEN HealthcareServiceUnitID IN (82,83,99,138,140) THEN TransactionNo END) AS TungguJangdik,
+                        MAX(CASE WHEN HealthcareServiceUnitID NOT IN (82,83,99,138,140,101,137) THEN TransactionNo END) AS Keperawatan,
+                        MAX(CASE WHEN HealthcareServiceUnitID IN (101,137) THEN TransactionNo END) AS TungguFarmasi,
+                        COUNT(DISTINCT GCTransactionStatus) AS OutStanding
+                    FROM PatientChargesHD
+                    WHERE GCTransactionStatus<>'X121^999' 
                         AND GCTransactionStatus IN ('X121^001')
-                        AND HealthcareServiceUnitID IN (82,83,99,138,140)
-                        ORDER BY TestOrderID ASC),
-                    Keperawatan =
-                        (SELECT TOP 1 TransactionNo 
-                        FROM PatientChargesHD
-                        WHERE VisitID=cv.VisitID 
-                        AND GCTransactionStatus<>'X121^999' 
-                        AND GCTransactionStatus IN ('X121^001')
-                        AND HealthcareServiceUnitID NOT IN (82,83,99,138,140,101,137)
-                        ORDER BY TestOrderID ASC),
-                    TungguFarmasi = 
-                        (SELECT TOP 1 TransactionNo 
-                        FROM PatientChargesHD
-                        WHERE VisitID=cv.VisitID 
-                        AND GCTransactionStatus<>'X121^999' 
-                        AND GCTransactionStatus IN ('X121^001')
-                        AND HealthcareServiceUnitID IN (101,137)
-                        ORDER BY TestOrderID ASC),
-                    RegistrationStatus = 
-                        (SELECT TOP 1 IsLockDownNEW
-                        FROM RegistrationStatusLog 
-                        WHERE RegistrationID = a.RegistrationID 
-                        ORDER BY ID DESC),
-                    OutStanding =
-                        (SELECT COUNT(DISTINCT GCTransactionStatus) 
-                        FROM PatientChargesHD 
-                        WHERE VisitID=cv.VisitID 
-                        AND GCTransactionStatus IN ('X121^001')),
-                    Billing =
-                        (SELECT MAX(CreatedDate) 
-                            FROM PatientBill 
-                            WHERE RegistrationID = cv.RegistrationID 
-                                AND GCTransactionStatus <> 'X121^999' 
-                                AND CreatedDate IS NOT NULL),
-                    Bayar =
-                        (SELECT MAX(CreatedDate) 
-                            FROM PatientPaymentHd 
-                            WHERE RegistrationID = cv.RegistrationID 
-                                AND GCTransactionStatus <> 'X121^999' 
-                                AND CreatedDate IS NOT NULL),
-                    BolehPulang = 
-                        (SELECT MAX(PrintedDate) 
-                            FROM ReportPrintLog 
-                            WHERE ReportID = 7012 
-                                AND ReportParameter = CONCAT('RegistrationID = ', r.RegistrationID))
-                FROM vBed a
-                LEFT JOIN vPatient p ON p.MRN = a.MRN
-                LEFT JOIN PatientNotes pn ON pn.MRN = a.MRN
-                LEFT JOIN vRegistration r ON r.RegistrationID = a.RegistrationID
-                LEFT JOIN ConsultVisit cv ON cv.VisitID = r.VisitID
-                LEFT JOIN PatientVisitNote pvn ON pvn.VisitID = cv.VisitID 
-                    AND pvn.GCNoteType IN ('X312^001', 'X312^002', 'X312^003', 'X312^004', 'X312^005', 'X312^006')
-                WHERE a.IsDeleted = 0 
-                AND a.RegistrationID IS NOT NULL
-                AND cv.PlanDischargeDate IS NOT NULL
-                AND r.GCRegistrationStatus <> 'X020^006'
+                    GROUP BY VisitID
+                	)
+					SELECT DISTINCT 
+                        r.ServiceUnitName,
+                        a.BedCode,
+                        a.MedicalNo,
+                        a.PatientName,
+                        r.CustomerType,    
+                        cv.PlanDischargeDate,
+                        cv.PlanDischargeTime,
+                        CatRencanaPulang = cv.PlanDischargeNotes,
+                        pc.TungguJangdik,
+                    	pc.Keperawatan,
+                    	pc.TungguFarmasi,
+                    	pc.OutStanding,
+                        RegistrationStatus = 
+                            (SELECT TOP 1 IsLockDownNEW
+                            FROM RegistrationStatusLog 
+                            WHERE RegistrationID = a.RegistrationID 
+                            ORDER BY ID DESC),
+                        Billing =
+                            (SELECT MAX(CreatedDate) 
+                                FROM PatientBill 
+                                WHERE RegistrationID = cv.RegistrationID 
+                                    AND GCTransactionStatus <> 'X121^999' 
+                                    AND CreatedDate IS NOT NULL),
+                        Bayar =
+                            (SELECT MAX(CreatedDate) 
+                                FROM PatientPaymentHd 
+                                WHERE RegistrationID = cv.RegistrationID 
+                                    AND GCTransactionStatus <> 'X121^999' 
+                                    AND CreatedDate IS NOT NULL),
+                        BolehPulang = 
+                            (SELECT MAX(PrintedDate) 
+                                FROM ReportPrintLog 
+                                WHERE ReportID = 7012 
+                                    AND ReportParameter = CONCAT('RegistrationID = ', r.RegistrationID))
+                    FROM vBed a
+                    LEFT JOIN vRegistration r ON r.RegistrationID = a.RegistrationID
+                    LEFT JOIN ConsultVisit cv ON cv.VisitID = r.VisitID
+                    LEFT JOIN PatientVisitNote pvn ON pvn.VisitID = cv.VisitID 
+                        AND pvn.GCNoteType IN ('X312^001', 'X312^002', 'X312^003', 'X312^004', 'X312^005', 'X312^006')
+                    LEFT JOIN PatientCharges pc ON pc.VisitID = cv.VisitID
+                    WHERE a.IsDeleted = 0 
+                    AND a.RegistrationID IS NOT NULL
+                    AND cv.PlanDischargeDate IS NOT NULL
+                    AND r.GCRegistrationStatus <> 'X020^006'
             ");
 
             $data_batch = [];
