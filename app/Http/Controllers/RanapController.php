@@ -27,8 +27,8 @@ class RanapController extends Controller
         $ip = $data->update_by;
         Log::info("UpdateAt: " . $updateAt . " by " . $ip);    
         $isExpired = $expired > $expirationTime;
-        Log::info("Expired? " . $isExpired);
-        Log::info("Validasi data: " . ($isExpired ? 'Kadaluarsa pada: ' . $expired : 'Masih valid'));
+        // Log::info("Expired? " . $isExpired);
+        // Log::info("Validasi data: " . ($isExpired ? 'Kadaluarsa pada: ' . $expired : 'Masih valid'));
 
         return $isExpired;
     }
@@ -44,14 +44,14 @@ class RanapController extends Controller
         // Cek apakah data sudah expired.
         if (!$data || $expiredData) {
             DB::connection('pgsql')->table('temp_data_ajax')->truncate();
-            Log::info('Data lama sudah dihapus. Memanggil getPatientData');
+            // Log::info('Data lama sudah dihapus. Memanggil getPatientData');
             Patient::getPatientData();
-            Log::info('Tabel temp_data_ajax null. Memanggil getPatientData ');
+            // Log::info('Tabel temp_data_ajax null. Memanggil getPatientData ');
             $data = DB::connection('pgsql')->table('temp_data_ajax')->get();
         } else {
             // Data tidak expired, ambil data yang sudah ada.
             $data = DB::connection('pgsql')->table('temp_data_ajax')->get();
-            Log::info('Data tidak expired.');
+            // Log::info('Data tidak expired.');
         }
         $patients = collect($data);
 
@@ -89,9 +89,9 @@ class RanapController extends Controller
         }
         
         /* UNTUK MEMASTIKAN IP USER DAN UNITNYA BENAR. */
-        Log::info('IP client: ' . $ipAddress);
-        Log::info('unit IP address: ' . $unit);
-        Log::info('Service Unit: ' . $serviceUnit);
+        // Log::info('IP client: ' . $ipAddress);
+        // Log::info('unit IP address: ' . $unit);
+        // Log::info('Service Unit: ' . $serviceUnit);
 
         /* WARNA HEADER KARTU BERDASARKAN customerType (PENJAMIN BAYAR). */
         $customerTypeColors = DB::table('customer_type_colors')->pluck('color', 'customer_type');
@@ -108,7 +108,6 @@ class RanapController extends Controller
 
             $patient -> billingDate = $billingDate;
             $patient -> customerTypeIcons = $customerTypeIcons;
-
 
             $column = $this-> mapStatusToColumn($status); // Mapping status ke kolom tabel.
 

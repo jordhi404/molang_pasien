@@ -55,7 +55,7 @@ class Patient extends Model
             'locked_at' => now(),
             'ip_address' => request()->ip(), // IP user yang melakukan lock
         ]);
-        Log::info('Lock dibuat pada: ' . now());
+        // Log::info('Lock dibuat pada: ' . now());
 
         /* MEMULAI PROSES PEMBAHARUAN DATA */
         try {
@@ -168,7 +168,7 @@ class Patient extends Model
                                 ->where('updated_at', '>=', $valid_time); // Cek apakah masih valid.
                         })->exists();
 
-                Log::info('Valid time: ' . $valid_time);
+                // Log::info('Valid time: ' . $valid_time);
 
                 if(!$exists) {
                     $data_batch[] = [
