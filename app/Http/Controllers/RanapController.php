@@ -36,7 +36,7 @@ class RanapController extends Controller
     public function getPatientDataAjax(Request $request) {
         $data = DB::connection('pgsql')->table('temp_data_ajax')->first();
         $expiredData = $this->isDataExpired($data);
-        $beds = collect(Bed::getBedToClean());
+        // $beds = collect(Bed::getBedToClean());
         $ipAddress = $request->ip();
         $unit = ip_mappings::on('pgsql')->where('ip_address', $ipAddress)->value('unit');
         $serviceUnit = $this->getServiceUnit($unit);
@@ -64,9 +64,9 @@ class RanapController extends Controller
                     return in_array($patient->ServiceUnitName, $allowedWards);
                 });
     
-                $beds = $beds->filter(function ($bed) use ($allowedWards) {
-                    return in_array($bed->ServiceUnitName, $allowedWards);
-                });
+                // $beds = $beds->filter(function ($bed) use ($allowedWards) {
+                //     return in_array($bed->ServiceUnitName, $allowedWards);
+                // });
             } elseif ($unit == 'FARMASI RANAP') {
                 $allowedWards = ['TJAN KHEE SWAN BARAT', 'TJAN KHEE SWAN TIMUR', 'RUANG ASA', 'KWEE HAN TIONG', 'PERAWATAN IBU & ANAK 1', 'PERAWATAN IBU & ANAK 2'];
 
@@ -74,17 +74,17 @@ class RanapController extends Controller
                     return in_array($patient->ServiceUnitName, $allowedWards);
                 });
     
-                $beds = $beds->filter(function ($bed) use ($allowedWards) {
-                    return in_array($bed->ServiceUnitName, $allowedWards);
-                });
+                // $beds = $beds->filter(function ($bed) use ($allowedWards) {
+                //     return in_array($bed->ServiceUnitName, $allowedWards);
+                // });
             } else {
                 $patients = $patients->filter(function ($patient) use ($serviceUnit) {
                     return $patient->ServiceUnitName == $serviceUnit;
                 });
     
-                $beds = $beds->filter(function ($bed) use ($serviceUnit) {
-                    return $bed->ServiceUnitName == $serviceUnit;
-                });
+                // $beds = $beds->filter(function ($bed) use ($serviceUnit) {
+                //     return $bed->ServiceUnitName == $serviceUnit;
+                // });
             }
         }
         
@@ -181,51 +181,51 @@ class RanapController extends Controller
             }
         }
 
-        foreach ($beds as $bed) {
-            $BedCode = $bed->BedCode; // Untuk debugging
-            $GCBedStatus = $bed->GCBedStatus;
-            $BedStatus = $bed->BedStatus;
+        // foreach ($beds as $bed) {
+        //     $BedCode = $bed->BedCode; // Untuk debugging
+        //     $GCBedStatus = $bed->GCBedStatus;
+        //     $BedStatus = $bed->BedStatus;
 
-            $bedCleaningRecord = bed_cleaning_record::firstOrCreate(
-                ['BedCode' => $BedCode], // Kunci unik
-                [
-                    'ServiceUnitName' => $bed->ServiceUnitName,
-                    'LastUnoccupiedDate' => $bed->LastUnoccupiedDate,
-                ]
-            );
+        //     $bedCleaningRecord = bed_cleaning_record::firstOrCreate(
+        //         ['BedCode' => $BedCode], // Kunci unik
+        //         [
+        //             'ServiceUnitName' => $bed->ServiceUnitName,
+        //             'LastUnoccupiedDate' => $bed->LastUnoccupiedDate,
+        //         ]
+        //     );
 
-            // Jika status bed menunjukkan sedang dibersihkan
-            if ($GCBedStatus == '0116^H' || $BedStatus == 'SEDANG DIBERSIHKAN') {
-                // Jika bed belum tercatat, isi BedUnoccupiedInReality dan ExpectedDoneCleaning
-                if (!$bedCleaningRecord->BedUnoccupiedInReality) {
-                    $bedCleaningRecord->BedUnoccupiedInReality = Carbon::now();
-                    $bedCleaningRecord->ExpectedDoneCleaning = Carbon::now()->addMinutes(20);
-                    $bedCleaningRecord->save();
-                }
-            } else{
-                // Jika bed sudah selesai dibersihkan, isi DoneCleaningInReality dan CleaningDuration
-                if (!$bedCleaningRecord->DoneCleaningInReality) {
-                    $bedCleaningRecord->DoneCleaningInReality = Carbon::now();
+        //     // Jika status bed menunjukkan sedang dibersihkan
+        //     if ($GCBedStatus == '0116^H' || $BedStatus == 'SEDANG DIBERSIHKAN') {
+        //         // Jika bed belum tercatat, isi BedUnoccupiedInReality dan ExpectedDoneCleaning
+        //         if (!$bedCleaningRecord->BedUnoccupiedInReality) {
+        //             $bedCleaningRecord->BedUnoccupiedInReality = Carbon::now();
+        //             $bedCleaningRecord->ExpectedDoneCleaning = Carbon::now()->addMinutes(20);
+        //             $bedCleaningRecord->save();
+        //         }
+        //     } else{
+        //         // Jika bed sudah selesai dibersihkan, isi DoneCleaningInReality dan CleaningDuration
+        //         if (!$bedCleaningRecord->DoneCleaningInReality) {
+        //             $bedCleaningRecord->DoneCleaningInReality = Carbon::now();
 
-                    // Menghitung durasi pembersihan bed
-                    if ($bedCleaningRecord->BedUnoccupiedInReality) {
-                        $bedCleaningRecord->CleaningDuration = Carbon::parse($bedCleaningRecord->DoneCleaningInReality)
-                                                                ->diffInSeconds(Carbon::parse($bedCleaningRecord->BedUnoccupiedInReality));
-                    }
-                    $bedCleaningRecord->save();
-                }
-            }
-            $bedStandardTime = DB::table('standard_times')
-                            ->where('keterangan', $bed->BedStatus)
-                            ->value('standard_time');
-            $bed->bed_standard_time = $bedStandardTime;
+        //             // Menghitung durasi pembersihan bed
+        //             if ($bedCleaningRecord->BedUnoccupiedInReality) {
+        //                 $bedCleaningRecord->CleaningDuration = Carbon::parse($bedCleaningRecord->DoneCleaningInReality)
+        //                                                         ->diffInSeconds(Carbon::parse($bedCleaningRecord->BedUnoccupiedInReality));
+        //             }
+        //             $bedCleaningRecord->save();
+        //         }
+        //     }
+        //     $bedStandardTime = DB::table('standard_times')
+        //                     ->where('keterangan', $bed->BedStatus)
+        //                     ->value('standard_time');
+        //     $bed->bed_standard_time = $bedStandardTime;
 
-            // Log::info('Bed status bed ' . $BedCode . ': ' . $BedStatus);
-        }
+        //     // Log::info('Bed status bed ' . $BedCode . ': ' . $BedStatus);
+        // }
 
         return response()->json([
             'patients' => $patients->values()->toArray(),
-            'beds' => $beds->values()->toArray(),
+            // 'beds' => $beds->values()->toArray(),
             'customerTypeColors' => $customerTypeColors->toArray(),
         ]);
     }

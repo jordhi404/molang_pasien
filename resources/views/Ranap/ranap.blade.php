@@ -77,16 +77,27 @@
                 </div>
             </div>
 
+            <!-- Kolom Boleh Pulang -->
+            <div class="col" id="boleh-pulang-column">
+                <div class="header" id="column-title">
+                    Boleh Pulang
+                </div>
+                <hr class="border-5"/>
+                <div class="scrollable" id="bolehPulang-list">
+                    <!-- Data akan di-load menggunakan AJAX -->
+                </div>
+            </div>
+
             <!-- Kolom Bed -->
-            <div class="col" id="toClean-list">
+            <!-- <div class="col" id="toClean-list">
                 <div class="header" id="column-title">
                     Bed Dibersihkan
                 </div>
                 <hr class="border-5"/>
-                <div class="scrollable" id="bed-list">
+                <div class="scrollable" id="bed-list"> -->
                     <!-- Data akan di-load menggunakan AJAX -->
-                </div>
-            </div>
+                <!-- </div>
+            </div> -->
         </div>
     </div>
 

@@ -10,7 +10,7 @@ $(document).ready(function() {
 
     let retryCount = 0;
     let patientDataForTimer = [];
-    let bedDataForTimer = [];
+    // let bedDataForTimer = [];
 
     function updatePatientCard() {
         $.ajax({
@@ -23,21 +23,22 @@ $(document).ready(function() {
             },
             success: function(response) {
                 console.log('Response: ',response);
-                if (response.patients && response.customerTypeColors && response.beds) {
+                if (response.patients && response.customerTypeColors) { // Sementara hilangkan response.beds
                     let patients = response.patients;
                     let customerTypeColors = response.customerTypeColors;
-                    let beds = response.beds;
+                    // let beds = response.beds;
 
                     retryCount = 0; // Reset counter jika data berhasil termuat.
                     patientDataForTimer = patients; // Simpan data pasien ke variabel.
-                    bedDataForTimer = beds; // Simpan data bed ke variabel.
+                    // bedDataForTimer = beds; // Simpan data bed ke variabel.
 
                     // Kosongkan daftar dalam kolom.
                     $('#keperawatan-list').empty();
                     $('#farmasi-list').empty();
                     $('#tungguKasir-list').empty();
                     $('#selesaiKasir-list').empty();
-                    $('#bed-list').empty();
+                    $('#bolehPulang-list').empty();
+                    // $('#bed-list').empty();
 
                     // Loop untuk mengisi data.
                     patients.forEach(function(patient) {
@@ -90,10 +91,6 @@ $(document).ready(function() {
                                 <div class="card-body" id="selesaiCardBody">
                                     <img id="check-logo" src="Logo_img/accept.png" alt="Check" style="height: 20px; width: 20px; margin-left: 0;">
                                     <p class="blinking-text" style="color: red"><strong>Administrasi Selesai.</strong></p>
-                                    ${patient.BolehPulang !==null ? `
-                                        <img id="SIP-check-logo" src="Logo_img/accept.png" alt="Check" style="height: 20px; width: 20px; margin-left: 0;">    
-                                        <p class="blinking-text" style="color: red"><strong>Cetak SIP.</strong></p>
-                                    ` : `<p style="color: black"><strong>Cetak SIP.</strong></p>`}
                                 </div>
                             </div>
                         `;
@@ -117,6 +114,21 @@ $(document).ready(function() {
                             </div>
                         `;
 
+                        let bolehPulangCard = `
+                            <div class="card">
+                                <div class="card-header" style="background-color: ${headerColor};">
+                                    <div class="patient-name" style="flex-grow: 1; width: 10vw;">
+                                        <strong>${patient.PatientName.length > 15 ? patient.PatientName.slice(0, 15) + '...' : patient.PatientName} / ${patient.BedCode}</strong>
+                                    </div>
+                                    <span class="customerBadge badge-${patient.CustomerType}">${customerTypeIcon}</span>
+                                </div>
+                                <div class="card-body" id="selesaiCardBody">
+                                    <img id="check-logo" src="Logo_img/accept.png" alt="Check" style="height: 20px; width: 20px; margin-left: 0;">
+                                    <p class="blinking-text" style="color: red"><strong>SIP sudah tercetak.</strong></p>
+                                </div>
+                            </div>
+                        `;
+
                         // Menentukan kolom berdasarkan status pasien
                         if (patient.Keterangan === 'Tunggu Jangdik' || patient.Keterangan === 'Tunggu Keperawatan') {
                             $('#keperawatan-list').append(patientCard);
@@ -126,34 +138,36 @@ $(document).ready(function() {
                             $('#tungguKasir-list').append(billingCard);
                         } else if (patient.Keterangan === 'Bayar/Piutang') {
                             $('#selesaiKasir-list').append(bayarCard);
+                        } else if (patient.Keterangan === 'Boleh Pulang') {
+                            $('#bolehPulang-list').append(bolehPulangCard);
                         }
                     });
 
                     // Menampilkan data bed.
-                    beds.forEach(function(bed) {
-                        let bedCard = `
-                            <div class="card">
-                                <div class = "card-header" style = "background-color: lightgrey;">
-                                    <strong>${bed.BedCode}</strong>
-                                </div>
-                                <div class = "card-body">
-                                    <div> 
-                                        <p><strong>Cleaning Time:</strong><span id="clean-time-${bed.BedCode}"> ${bed.cleaningTimeFormatted}</span><br></p>
-                                        <div class="progress mb-1">
-                                            <div id="progress-bar-${bed.BedCode}" 
-                                                class="progress-bar ${bed.progressPercentage > 100 ? 'progress-bar-red' : 'progress-bar-blue'}"
-                                                role="progressbar"
-                                                style="width: ${bed.progressPercentage}%"
-                                                aria-valuemin="0"
-                                                aria-valuemax="100">
-                                            </div>
-                                        </div>
-                                    </div>
-                                </div>
-                            </div>
-                        `;
-                        $('#bed-list').append(bedCard);
-                    });
+                    // beds.forEach(function(bed) {
+                    //     let bedCard = `
+                    //         <div class="card">
+                    //             <div class = "card-header" style = "background-color: lightgrey;">
+                    //                 <strong>${bed.BedCode}</strong>
+                    //             </div>
+                    //             <div class = "card-body">
+                    //                 <div> 
+                    //                     <p><strong>Cleaning Time:</strong><span id="clean-time-${bed.BedCode}"> ${bed.cleaningTimeFormatted}</span><br></p>
+                    //                     <div class="progress mb-1">
+                    //                         <div id="progress-bar-${bed.BedCode}" 
+                    //                             class="progress-bar ${bed.progressPercentage > 100 ? 'progress-bar-red' : 'progress-bar-blue'}"
+                    //                             role="progressbar"
+                    //                             style="width: ${bed.progressPercentage}%"
+                    //                             aria-valuemin="0"
+                    //                             aria-valuemax="100">
+                    //                         </div>
+                    //                     </div>
+                    //                 </div>
+                    //             </div>
+                    //         </div>
+                    //     `;
+                    //     $('#bed-list').append(bedCard);
+                    // });
 
                     // Keterangan update.
                     const now = new Date();
@@ -293,55 +307,55 @@ $(document).ready(function() {
         }
     }
     
-    function updateCleaningTime() {
-        if (bedDataForTimer && Array.isArray(bedDataForTimer)) {
-            bedDataForTimer.forEach(bed => {
-                if (bed != null) {
-                    const cleaningTimeElementId = 'clean-time-' + bed.BedCode;
-                    const bedProgressBarElementId = 'progress-bar-' + bed.BedCode;
+    // function updateCleaningTime() {
+    //     if (bedDataForTimer && Array.isArray(bedDataForTimer)) {
+    //         bedDataForTimer.forEach(bed => {
+    //             if (bed != null) {
+    //                 const cleaningTimeElementId = 'clean-time-' + bed.BedCode;
+    //                 const bedProgressBarElementId = 'progress-bar-' + bed.BedCode;
 
-                    var cleaningTimeElement = document.getElementById(cleaningTimeElementId);
-                    var bedProgressBar = document.getElementById(bedProgressBarElementId);
+    //                 var cleaningTimeElement = document.getElementById(cleaningTimeElementId);
+    //                 var bedProgressBar = document.getElementById(bedProgressBarElementId);
 
-                    if (cleaningTimeElement && bedProgressBar) {
-                        // Cek jika status pasien bukan 'Bayar/Piutang'
-                        if (bed.GCBedStatus == '0116^H') {
-                            var emptyTime = new Date(bed.LastUnoccupiedDate).getTime();
-                            var timeNow = new Date().getTime();
-                            var cleaningTime = Math.floor((timeNow - emptyTime)/1000);
+    //                 if (cleaningTimeElement && bedProgressBar) {
+    //                     // Cek jika status pasien bukan 'Bayar/Piutang'
+    //                     if (bed.GCBedStatus == '0116^H') {
+    //                         var emptyTime = new Date(bed.LastUnoccupiedDate).getTime();
+    //                         var timeNow = new Date().getTime();
+    //                         var cleaningTime = Math.floor((timeNow - emptyTime)/1000);
     
-                            if(cleaningTime >= 0) {
-                                var Hours = Math.floor(cleaningTime / 3600);
-                                var Minutes = Math.floor((cleaningTime % 3600) / 60);
-                                var Seconds = cleaningTime % 60;
-                                var cleaningTimeFormatted = ('0' + Hours).slice(-2) + ':' + ('0' + Minutes).slice(-2) + ':' + ('0' + Seconds).slice(-2);
+    //                         if(cleaningTime >= 0) {
+    //                             var Hours = Math.floor(cleaningTime / 3600);
+    //                             var Minutes = Math.floor((cleaningTime % 3600) / 60);
+    //                             var Seconds = cleaningTime % 60;
+    //                             var cleaningTimeFormatted = ('0' + Hours).slice(-2) + ':' + ('0' + Minutes).slice(-2) + ':' + ('0' + Seconds).slice(-2);
 
-                                cleaningTimeElement.innerHTML = cleaningTimeFormatted;
+    //                             cleaningTimeElement.innerHTML = cleaningTimeFormatted;
 
-                                var standardCleaningTimeInSeconds = bed.bed_standard_time * 60;
+    //                             var standardCleaningTimeInSeconds = bed.bed_standard_time * 60;
 
-                                var progressPercentage = Math.min((cleaningTime / standardCleaningTimeInSeconds) * 100, 100);
-                                bedProgressBar.style.width = progressPercentage + '%';
+    //                             var progressPercentage = Math.min((cleaningTime / standardCleaningTimeInSeconds) * 100, 100);
+    //                             bedProgressBar.style.width = progressPercentage + '%';
 
-                                // Reset class progress bar
-                                bedProgressBar.classList.remove('progress-bar-red', 'progress-bar-blue');
-                                if (cleaningTime > standardCleaningTimeInSeconds) {
-                                    bedProgressBar.classList.add('progress-bar-red');
-                                } else {
-                                    bedProgressBar.classList.add('progress-bar-blue');
-                                }
-                            }
-                        } else {
-                            console.warn(`Bed masih terisi.`);
-                        }
-                    }
-                }
-            });
-        } else {
-            console.log('Tipe bedDataForTimer:', typeof bedDataForTimer);
-            console.log('Isi bedDataForTimer:', bedDataForTimer);
-        }
-    }
+    //                             // Reset class progress bar
+    //                             bedProgressBar.classList.remove('progress-bar-red', 'progress-bar-blue');
+    //                             if (cleaningTime > standardCleaningTimeInSeconds) {
+    //                                 bedProgressBar.classList.add('progress-bar-red');
+    //                             } else {
+    //                                 bedProgressBar.classList.add('progress-bar-blue');
+    //                             }
+    //                         }
+    //                     } else {
+    //                         console.warn(`Bed masih terisi.`);
+    //                     }
+    //                 }
+    //             }
+    //         });
+    //     } else {
+    //         console.log('Tipe bedDataForTimer:', typeof bedDataForTimer);
+    //         console.log('Isi bedDataForTimer:', bedDataForTimer);
+    //     }
+    // }
 
     function checkDataLockAndUpdate(retry = 0) {
         $.ajax({
@@ -398,11 +412,11 @@ $(document).ready(function() {
 
     updatePatientCard();
     updateTime();
-    updateCleaningTime();
+    // updateCleaningTime();
     checkDataLockAndUpdate();
     
     setInterval(updatePatientCard, UPDATE_INTERVAL);
     setInterval(updateTime, TIME_UPDATE_INTERVAL);
-    setInterval(updateCleaningTime, TIME_UPDATE_INTERVAL);
+    // setInterval(updateCleaningTime, TIME_UPDATE_INTERVAL);
     setInterval(checkDataLockAndUpdate, LOCK_CHECK_INTERVAL);
 });
